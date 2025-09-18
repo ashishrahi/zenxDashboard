@@ -1,76 +1,79 @@
 "use client";
+
 import { useState } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import { AddUserDialog } from "@/AppComponents/AppUserDialog";
+import { AddBlogDialog } from "@/AppComponents/AppBlogDialog"; // New dialog for blog
 import { ShadCNPagination } from "@/AppComponents/AppPagination";
 import AppHeaderActions from "@/AppComponents/AppHeaderActions";
 
 import {
-  useUsers,
-  useAddUser,
-  useUpdateUser,
-  useDeleteUser,
-} from "@/hooks/Users/index";
-import { IUser } from "@/types/userTypes";
+  useBlogs,
+  useAddBlog,
+  useUpdateBlog,
+  useDeleteBlog,
+} from "@/hooks/Blog/index"; // New hooks for blogs
+import { IBlog } from "@/types/blogTypes"; // Blog type
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
-import { UserIcon } from "lucide-react";
 
-export default function UserPage() {
+export default function BlogPage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [selectedBlog, setSelectedBlog] = useState<IBlog | null>(null);
 
-  const { data: users = [], isLoading } = useUsers();
-  const addUser = useAddUser();
-  const updateUser = useUpdateUser();
-  const deleteUser = useDeleteUser();
+  const { data: blogs = [], isLoading } = useBlogs();
+  const addBlog = useAddBlog();
+  const updateBlog = useUpdateBlog();
+  const deleteBlog = useDeleteBlog();
 
-  const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(filterText.toLowerCase())
+  // Filter blogs by title or author
+  const filteredBlogs = blogs.filter(
+    (b) =>
+      b.title.toLowerCase().includes(filterText.toLowerCase()) ||
+      b.author.toLowerCase().includes(filterText.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredUsers.length / pageSize);
-  const paginatedUsers = filteredUsers.slice(
+  const totalPages = Math.ceil(filteredBlogs.length / pageSize);
+  const paginatedBlogs = filteredBlogs.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
   const openAddDialog = () => {
-    setSelectedUser(null);
+    setSelectedBlog(null);
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (user: IUser) => {
-    setSelectedUser(user);
+  const openEditDialog = (blog: IBlog) => {
+    setSelectedBlog(blog);
     setIsDialogOpen(true);
   };
 
-  const handleSubmitUser = (user: IUser) => {
-    if (user.id) updateUser.mutate(user);
-    else addUser.mutate({ ...user, id: undefined });
+  const handleSubmitBlog = (blog: IBlog) => {
+    if (blog.id) updateBlog.mutate(blog);
+    else addBlog.mutate({ ...blog, id: undefined });
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (user: IUser) => deleteUser.mutate(user.id);
+  const handleDelete = (blog: IBlog) => deleteBlog.mutate(blog.id);
 
   const columns = [
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    { key: "role", label: "Role" },
+    { key: "title", label: "Title" },
+    { key: "author", label: "Author" },
+    { key: "category", label: "Category" },
+    { key: "publishedDate", label: "Published Date" },
     { key: "status", label: "Status" },
   ];
 
   return (
     <AppContainer>
       <div className="p-3 grid gap-6">
-
         {/* Header Actions */}
         <AppHeaderActions
-          title="Add User"
+          title="Add Blog"
           filterText={filterText}
           setFilterText={setFilterText}
           onAddClick={openAddDialog}
@@ -83,13 +86,11 @@ export default function UserPage() {
           }`}
         >
           {isLoading ? (
-            <TableSkeleton
-            rows={pageSize}
-            />
+            <TableSkeleton rows={pageSize} />
           ) : (
             <GlobalTable
               columns={columns}
-              data={paginatedUsers}
+              data={paginatedBlogs}
               onEdit={openEditDialog}
               onDelete={handleDelete}
             />
@@ -98,14 +99,11 @@ export default function UserPage() {
 
         {/* Bottom Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
-          {/* Page Size Selector */}
           <PageSizeSelector
             pageSize={pageSize}
             setPageSize={setPageSize}
             setCurrentPage={setCurrentPage}
           />
-
-          {/* Pagination */}
           <ShadCNPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -113,12 +111,12 @@ export default function UserPage() {
           />
         </div>
 
-        {/* Add / Edit User Dialog */}
-        <AddUserDialog
+        {/* Add / Edit Blog Dialog */}
+        <AddBlogDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onSubmitUser={handleSubmitUser}
-          userToEdit={selectedUser || undefined}
+          onSubmitBlog={handleSubmitBlog}
+          blogToEdit={selectedBlog || undefined}
         />
       </div>
     </AppContainer>

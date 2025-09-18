@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { IUser, IAddress } from "@/types/userTypes";
+import { IUser} from "@/types/userTypes";
 
 interface AddUserDialogProps {
   isOpen: boolean;

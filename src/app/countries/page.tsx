@@ -2,65 +2,65 @@
 import { useState } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import { AddUserDialog } from "@/AppComponents/AppUserDialog";
+import { AddCountryDialog } from "@/AppComponents/AddCountryDialog";
 import { ShadCNPagination } from "@/AppComponents/AppPagination";
 import AppHeaderActions from "@/AppComponents/AppHeaderActions";
 
 import {
-  useUsers,
-  useAddUser,
-  useUpdateUser,
-  useDeleteUser,
-} from "@/hooks/Users/index";
-import { IUser } from "@/types/userTypes";
+  useCountries,
+  useAddCountry,
+  useUpdateCountry,
+  useDeleteCountry,
+} from "@/hooks/Countries/index";
+import { ICountry } from "@/types/countryTypes";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
-import { UserIcon } from "lucide-react";
+import { Globe } from "lucide-react";
 
-export default function UserPage() {
+export default function CountryPage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<ICountry | null>(null);
 
-  const { data: users = [], isLoading } = useUsers();
-  const addUser = useAddUser();
-  const updateUser = useUpdateUser();
-  const deleteUser = useDeleteUser();
+  const { data: countries = [], isLoading } = useCountries();
+  const addCountry = useAddCountry();
+  const updateCountry = useUpdateCountry();
+  const deleteCountry = useDeleteCountry();
 
-  const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(filterText.toLowerCase())
+  const filteredCountries = countries.filter((c) =>
+    c.name.toLowerCase().includes(filterText.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredUsers.length / pageSize);
-  const paginatedUsers = filteredUsers.slice(
+  const totalPages = Math.ceil(filteredCountries.length / pageSize);
+  const paginatedCountries = filteredCountries.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
   const openAddDialog = () => {
-    setSelectedUser(null);
+    setSelectedCountry(null);
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (user: IUser) => {
-    setSelectedUser(user);
+  const openEditDialog = (country: ICountry) => {
+    setSelectedCountry(country);
     setIsDialogOpen(true);
   };
 
-  const handleSubmitUser = (user: IUser) => {
-    if (user.id) updateUser.mutate(user);
-    else addUser.mutate({ ...user, id: undefined });
+  const handleSubmitCountry = (country: ICountry) => {
+    if (country.id) updateCountry.mutate(country);
+    else addCountry.mutate({ ...country, id: undefined });
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (user: IUser) => deleteUser.mutate(user.id);
+  const handleDelete = (country: ICountry) => deleteCountry.mutate(country.id);
 
   const columns = [
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    { key: "role", label: "Role" },
+    { key: "name", label: "Country Name" },
+    { key: "code", label: "Code" },
+    { key: "continent", label: "Continent" },
     { key: "status", label: "Status" },
   ];
 
@@ -70,7 +70,7 @@ export default function UserPage() {
 
         {/* Header Actions */}
         <AppHeaderActions
-          title="Add User"
+          title="Add Country"
           filterText={filterText}
           setFilterText={setFilterText}
           onAddClick={openAddDialog}
@@ -83,13 +83,11 @@ export default function UserPage() {
           }`}
         >
           {isLoading ? (
-            <TableSkeleton
-            rows={pageSize}
-            />
+            <TableSkeleton rows={pageSize} />
           ) : (
             <GlobalTable
               columns={columns}
-              data={paginatedUsers}
+              data={paginatedCountries}
               onEdit={openEditDialog}
               onDelete={handleDelete}
             />
@@ -113,12 +111,12 @@ export default function UserPage() {
           />
         </div>
 
-        {/* Add / Edit User Dialog */}
-        <AddUserDialog
+        {/* Add / Edit Country Dialog */}
+        <AddCountryDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onSubmitUser={handleSubmitUser}
-          userToEdit={selectedUser || undefined}
+          onSubmitCountry={handleSubmitCountry}
+          countryToEdit={selectedCountry || undefined}
         />
       </div>
     </AppContainer>

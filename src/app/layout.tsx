@@ -47,10 +47,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Main Content */}
           <div className="flex flex-col flex-1">
             <Header onToggleSidebar={toggleSidebar} />
-            <main className="flex-1 overflow-y-auto p-1 bg-background">
+            <main className="flex-1 overflow-y-auto p-1 bg-blend-darken">
               {children}
             </main>
-            
+          
           </div>
           </QueryClientProvider>
         </div>

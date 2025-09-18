@@ -68,7 +68,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
         <nav className="flex-1 overflow-y-auto mt-2">
 
               <SidebarSection
-            title="Masters"
+            title="MASTERS"
             icon={<Users className="w-4 h-4" />}
             isCollapsed={isCollapsed}
             items={[
@@ -101,7 +101,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             icon={<BoxesIcon className="w-4 h-4" />}
             isCollapsed={isCollapsed}
             items={[
-              { name: "BANNERS", href: "/banners" },
+              { name: "Banners", href: "/banners" },
               { name: "Active", href: "/active" },
             ]}
           />
