@@ -15,6 +15,17 @@ import {
 import { ISubcategory } from "@/types/subcategoryTypes";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
+import { useCategories } from "@/hooks/Categories";
+
+export interface ISubcategoryPayload {
+  _id?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  images: string[];
+  gender?: string;
+  categoryId: string; // <-- parent category
+}
 
 export default function SubcategoryPage() {
   const [filterText, setFilterText] = useState("");
@@ -24,12 +35,15 @@ export default function SubcategoryPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<ISubcategory | null>(null);
 
   const { data: subcategories = [], isLoading } = useSubcategories();
+  const { data: categories = []} = useCategories()
+
+
   const addSubcategory = useAddSubcategory();
   const updateSubcategory = useUpdateSubcategory();
   const deleteSubcategory = useDeleteSubcategory();
 
-  const filteredSubcategories = subcategories.filter((s) =>
-    s.name.toLowerCase().includes(filterText.toLowerCase())
+  const filteredSubcategories = subcategories?.filter((c) =>
+    c.name.toLowerCase().includes(filterText.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredSubcategories.length / pageSize);
@@ -44,29 +58,46 @@ export default function SubcategoryPage() {
   };
 
   const openEditDialog = (subcategory: ISubcategory) => {
-    setSelectedSubcategory(subcategory);
+    setSelectedSubcategory({ ...subcategory, _id: subcategory._id || subcategory._id });
     setIsDialogOpen(true);
   };
 
-  const handleSubmitSubcategory = (subcategory: ISubcategory) => {
-    if (subcategory.id) updateSubcategory.mutate(subcategory);
-    else addSubcategory.mutate({ ...subcategory, id: undefined });
+  const handleSubmitSubcategory = (subcategory: ISubcategoryPayload) => {
+    if (subcategory._id) {
+      updateSubcategory.mutate(subcategory);
+    } else {
+      addSubcategory.mutate(subcategory);
+    }
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (subcategory: ISubcategory) => deleteSubcategory.mutate(subcategory.id!);
+  const handleDelete = (subcategory: ISubcategory) => deleteSubcategory.mutate(subcategory._id);
 
   const columns = [
-    { key: "name", label: "Subcategory Name" },
+    { key: "name", label: "Name" },
+    { key: "slug", label: "Slug" },
     { key: "description", label: "Description" },
-    { key: "categoryId", label: "Parent Category" },
-    { key: "status", label: "Status" },
+    { key: "category", label: "Parent Category" },
+    {
+      key: "images",
+      label: "Images",
+      render: (row: any) => row.images?.length || "No images",
+    },
+    {
+      key: "createdAt",
+      label: "Created At",
+      render: (row: any) => new Date(row.createdAt).toLocaleDateString(),
+    },
+    {
+      key: "updatedAt",
+      label: "Updated At",
+      render: (row: any) => new Date(row.updatedAt).toLocaleDateString(),
+    },
   ];
 
   return (
     <AppContainer>
       <div className="p-3 grid gap-6">
-        {/* Header Actions */}
         <AppHeaderActions
           title="Add Subcategory"
           filterText={filterText}
@@ -74,7 +105,6 @@ export default function SubcategoryPage() {
           onAddClick={openAddDialog}
         />
 
-        {/* Table Container */}
         <div
           className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
             pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
@@ -92,14 +122,12 @@ export default function SubcategoryPage() {
           )}
         </div>
 
-        {/* Bottom Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
           <PageSizeSelector
             pageSize={pageSize}
             setPageSize={setPageSize}
             setCurrentPage={setCurrentPage}
           />
-
           <ShadCNPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -107,12 +135,12 @@ export default function SubcategoryPage() {
           />
         </div>
 
-        {/* Add / Edit Subcategory Dialog */}
         <AddSubcategoryDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSubmitSubcategory={handleSubmitSubcategory}
           subcategoryToEdit={selectedSubcategory || undefined}
+          categories ={categories}
         />
       </div>
     </AppContainer>

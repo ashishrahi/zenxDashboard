@@ -22,8 +22,8 @@ export const UserService = {
   },
 
   // Update an existing user
-  update: async (id: string, user: Partial<IUser>): Promise<IUser> => {
-    const { data } = await axiosInstance.put(`/users/${id}`, user);
+  update: async (user: IUser): Promise<IUser> => {
+    const { data } = await axiosInstance.put(`/users/${user._id}`, user);
     return data;
   },
 

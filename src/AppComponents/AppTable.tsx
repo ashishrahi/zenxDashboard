@@ -50,7 +50,7 @@ export const GlobalTable: React.FC<GlobalTableProps> = ({
         </TableHeader>
         <TableBody>
           {data.map((row) => (
-            <TableRow key={row.id}>
+            <TableRow key={row._id}>
               {columns.map((col) => (
                 <TableCell
                   key={col.key}

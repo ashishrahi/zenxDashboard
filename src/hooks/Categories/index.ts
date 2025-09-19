@@ -1,6 +1,8 @@
+"use client"
 // hooks/index.ts
-export { useProducts } from "./useProducts";
-export { useProduct } from "./useProduct";
-export { useAddProduct } from "./useAddProduct";
-export { useUpdateProduct } from "./useUpdateProduct";
-export { useDeleteProduct } from "./useDeleteProduct";
+
+export { useCategories } from "./useCategories";
+export { useCategory } from "./useCategory";
+export { useAddCategory } from "./useAddCategory";
+export { useUpdateCategory } from "./useUpdateCategory";
+export { useDeleteCategory } from "./useDeleteCategory";

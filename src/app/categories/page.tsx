@@ -1,67 +1,157 @@
 "use client";
-
 import { useState } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import { ProductFilter } from "@/AppComponents/ProductFilter";
-import { Button } from "@/components/ui/button";
-import { AddProductDialog } from "@/AppComponents/AddProductDialog"; // import dialog
-import { Plus } from "lucide-react";
+import { AddCategoryDialog } from "@/AppComponents/AppCategoryDialog";
+import { ShadCNPagination } from "@/AppComponents/AppPagination";
+import AppHeaderActions from "@/AppComponents/AppHeaderActions";
 
-const productsData = [
-  { id: 1, name: "Men's Briefs", size: "M", stock: 120, price: 499 },
-  { id: 2, name: "Women's Bikini", size: "S", stock: 80, price: 399 },
-];
+import {
+  useCategories,
+  useAddCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "@/hooks/Categories/index";
+import { ICategory } from "@/types/categoriesTypes";
+import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
+import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 
-const columns = [
-  { key: "name", label: "Product Name" },
-  { key: "size", label: "Size" },
-  { key: "stock", label: "Stock" },
-  { key: "price", label: "Price", render: (row: any) => `₹${row.price}` },
-];
+export interface ICategoryPayload {
+  _id?: string;       // <-- Add this
+  name: string;
+  slug: string;
+  description?: string;
+  images: string[];
+  gender?: string;
+}
 
-export default function ProductPage() {
+
+export default function CategoryPage() {
   const [filterText, setFilterText] = useState("");
-  const [products, setProducts] = useState(productsData);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<ICategory | null>(null);
 
-  const handleEdit = (row: any) => console.log("Edit", row);
-  const handleDelete = (row: any) =>
-    setProducts(products.filter((p) => p.id !== row.id));
+  const { data: categories = [], isLoading } = useCategories();
+  const addCategory = useAddCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
 
-  const handleAddProduct = (product: any) => {
-    setProducts([...products, { ...product, id: products.length + 1 }]);
-    setIsDialogOpen(false);
-  };
-
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(filterText.toLowerCase())
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(filterText.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredCategories.length / pageSize);
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Open Add Dialog
+  const openAddDialog = () => {
+    setSelectedCategory(null);
+    setIsDialogOpen(true);
+  };
+
+  // Open Edit Dialog
+  const openEditDialog = (category: ICategory) => {
+    setSelectedCategory({
+      ...category,
+      _id: category._id || category._id,
+    });
+    setIsDialogOpen(true);
+  };
+
+  // Submit Category
+ const handleSubmitCategory = (category: ICategoryPayload) => {
+
+  if (category._id) {
+    // Update existing category
+    updateCategory.mutate(category);
+  } else {
+    // Add new category
+    addCategory.mutate(category);
+  }
+  setIsDialogOpen(false);
+};
+
+
+  // Delete Category
+  const handleDelete = (category: ICategory) => deleteCategory.mutate(category._id);
+
+  const columns = [
+    { key: "name", label: "Name" },
+    { key: "slug", label: "Slug" },
+    { key: "description", label: "Description" },
+    {
+      key: "images",
+      label: "Images",
+      render: (row: any) => row.images?.length || "No images",
+    },
+    {
+      key: "createdAt",
+      label: "Created At",
+      render: (row: any) => new Date(row.createdAt).toLocaleDateString(),
+    },
+    {
+      key: "updatedAt",
+      label: "Updated At",
+      render: (row: any) => new Date(row.updatedAt).toLocaleDateString(),
+    },
+  ];
+
   return (
-    <div className="p-3 grid gap-6">
-      <AppContainer title="Product List">
-        <div className="flex justify-between mb-3">
-          <ProductFilter filterText={filterText} setFilterText={setFilterText} />
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
-          </Button>
+    <AppContainer>
+      <div className="p-3 grid gap-6">
+        {/* Header Actions */}
+        <AppHeaderActions
+          title="Add Category"
+          filterText={filterText}
+          setFilterText={setFilterText}
+          onAddClick={openAddDialog}
+        />
+
+        {/* Table */}
+        <div
+          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
+            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+          }`}
+        >
+          {isLoading ? (
+            <TableSkeleton rows={pageSize} />
+          ) : (
+            <GlobalTable
+              columns={columns}
+              data={paginatedCategories}
+              onEdit={openEditDialog}
+              onDelete={handleDelete}
+            />
+          )}
         </div>
 
-        <GlobalTable
-          columns={columns}
-          data={filteredProducts}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      </AppContainer>
+        {/* Bottom Controls */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
+          <PageSizeSelector
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            setCurrentPage={setCurrentPage}
+          />
+          <ShadCNPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
 
-      <AddProductDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        onAddProduct={handleAddProduct}
-      />
-    </div>
+        {/* Add/Edit Dialog */}
+        <AddCategoryDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          onSubmitCategory={handleSubmitCategory}
+          categoryToEdit={selectedCategory || undefined}
+        />
+      </div>
+    </AppContainer>
   );
 }
