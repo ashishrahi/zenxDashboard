@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Folder, ChevronDown, Search, X, Users, ListIcon, FilesIcon, BoxesIcon } from "lucide-react";
+import { Home, Folder, ChevronDown, Search, X, Users, BoxesIcon } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import Link from "next/link";
 import clsx from "clsx";
@@ -61,13 +61,9 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
           </div>
         )}
 
-
-        
-
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto mt-2">
-
-              <SidebarSection
+          <SidebarSection
             title="MASTERS"
             icon={<Users className="w-4 h-4" />}
             isCollapsed={isCollapsed}
@@ -79,13 +75,8 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
               { name: "Blog", href: "/blogs" },
               { name: "Export", href: "/exports" },
               { name: "History", href: "/histories" },
-
-
-
-
             ]}
           />
-
 
           <SidebarSection
             title="USERS"
@@ -96,7 +87,8 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
               { name: "Active User", href: "/users" },
             ]}
           />
-           <SidebarSection
+
+          <SidebarSection
             title="BANNERS"
             icon={<BoxesIcon className="w-4 h-4" />}
             isCollapsed={isCollapsed}
@@ -121,17 +113,17 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             icon={<BoxesIcon className="w-4 h-4" />}
             isCollapsed={isCollapsed}
             items={[
-              { name: "Subcategory", href: "/subcategories",},
+              { name: "Subcategory", href: "/subcategories" },
               { name: "Active", href: "/active" },
             ]}
           />
 
-             <SidebarSection
+          <SidebarSection
             title="PRODUCTS"
             icon={<BoxesIcon className="w-4 h-4" />}
             isCollapsed={isCollapsed}
             items={[
-              { name: "Products", href: "/products",},
+              { name: "Products", href: "/products" },
               { name: "Active", href: "/active" },
             ]}
           />
@@ -152,7 +144,7 @@ function SidebarSection({
   items: { name: string; href: string }[];
   isCollapsed: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false); // collapsed by default
 
   return (
     <div className="border-b border-gray-800 last:border-b-0">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -11,25 +11,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Upload,
   Trash2,
   XCircle,
   Tag,
   Link,
-  User,
   Edit3,
   Image as ImageIcon,
 } from "lucide-react";
+import { AppButton } from "./AppButton";
 
 export interface ICategoryPayload {
   _id?: string;
@@ -37,12 +29,6 @@ export interface ICategoryPayload {
   slug: string;
   description?: string;
   images: string[];
-  gender?: string;
-}
-
-interface GenderOption {
-  id: string;
-  name: string;
 }
 
 interface AddCategoryDialogProps {
@@ -50,7 +36,6 @@ interface AddCategoryDialogProps {
   onClose: () => void;
   onSubmitCategory: (category: ICategoryPayload) => void;
   categoryToEdit?: ICategoryPayload;
-  genderOptions?: GenderOption[];
 }
 
 export function AddCategoryDialog({
@@ -58,7 +43,6 @@ export function AddCategoryDialog({
   onClose,
   onSubmitCategory,
   categoryToEdit,
-  genderOptions = [],
 }: AddCategoryDialogProps) {
   const {
     register,
@@ -66,7 +50,6 @@ export function AddCategoryDialog({
     reset,
     setValue,
     watch,
-    control,
     formState: { errors },
   } = useForm<ICategoryPayload>({
     defaultValues: {
@@ -75,31 +58,28 @@ export function AddCategoryDialog({
       slug: "",
       description: "",
       images: [],
-      gender: "",
     },
   });
 
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const selectedGender = watch("gender");
 
-  // ✅ Populate form with existing category data when editing
+  // Populate form when editing
   useEffect(() => {
     if (categoryToEdit) {
       setValue("_id", categoryToEdit._id ?? "");
-      setValue("name", categoryToEdit?.name ?? "");
-      setValue("slug", categoryToEdit?.slug ?? "");
-      setValue("description", categoryToEdit?.description ?? "");
-      setValue("images", categoryToEdit?.images ?? []);
-      setValue("gender", categoryToEdit?.gender ?? "");
-      setUploadedImages(categoryToEdit?.images ?? []);
+      setValue("name", categoryToEdit.name ?? "");
+      setValue("slug", categoryToEdit.slug ?? "");
+      setValue("description", categoryToEdit.description ?? "");
+      setValue("images", categoryToEdit.images ?? []);
+      setUploadedImages(categoryToEdit.images ?? []);
     } else {
       reset();
       setUploadedImages([]);
     }
   }, [categoryToEdit, setValue, reset, isOpen]);
 
-  // ✅ Handle image upload
+  // Handle image upload
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -127,14 +107,12 @@ export function AddCategoryDialog({
   };
 
   const removeImage = (index: number) => {
-    const newImages = uploadedImages?.filter((_, i) => i !== index) ?? [];
+    const newImages = uploadedImages.filter((_, i) => i !== index);
     setUploadedImages(newImages);
     setValue("images", newImages);
   };
 
-  // ✅ Final submit handler
   const onSubmit = (data: ICategoryPayload) => {
-    console.log("Form submitted data:", data); // Debug
     onSubmitCategory(data);
     reset();
     setUploadedImages([]);
@@ -148,10 +126,7 @@ export function AddCategoryDialog({
     const name = e.target.value;
     setValue("name", name);
 
-    if (
-      !categoryToEdit?.slug ||
-      watch("slug") === generateSlugFromName(categoryToEdit?.name ?? "")
-    ) {
+    if (!categoryToEdit?.slug || watch("slug") === generateSlugFromName(categoryToEdit.name ?? "")) {
       setValue("slug", generateSlugFromName(name));
     }
   };
@@ -177,7 +152,6 @@ export function AddCategoryDialog({
           onSubmit={handleSubmit(onSubmit)}
           className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4"
         >
-          {/* Hidden input for _id */}
           <input type="hidden" {...register("_id")} />
 
           {/* Name */}
@@ -200,7 +174,7 @@ export function AddCategoryDialog({
                 <Tag className="text-gray-400 dark:text-gray-500" size={18} />
               </div>
             </div>
-            {errors?.name && <p className="text-red-500 text-xs mt-1">{errors.name?.message}</p>}
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
           </div>
 
           {/* Slug */}
@@ -225,39 +199,8 @@ export function AddCategoryDialog({
                 <Link className="text-gray-400 dark:text-gray-500" size={18} />
               </div>
             </div>
-            {errors?.slug && <p className="text-red-500 text-xs mt-1">{errors.slug?.message}</p>}
+            {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
           </div>
-
-          {/* Gender Select */}
-          {genderOptions?.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <User size={16} /> Gender
-              </Label>
-              <Controller
-                name="gender"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg py-3 px-4">
-                      <SelectValue placeholder="Select Gender" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                      {genderOptions?.map((g) => (
-                        <SelectItem
-                          key={g?.id}
-                          value={g?.id}
-                          className="focus:bg-gray-100 dark:focus:bg-gray-700"
-                        >
-                          {g?.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          )}
 
           {/* Description */}
           <div className="space-y-2 md:col-span-2">
@@ -303,7 +246,7 @@ export function AddCategoryDialog({
                 disabled={isUploading}
               />
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {uploadedImages?.length ?? 0} image(s) selected
+                {uploadedImages.length} image(s) selected
               </span>
             </div>
 
@@ -314,9 +257,9 @@ export function AddCategoryDialog({
               </div>
             )}
 
-            {uploadedImages?.length > 0 && (
+            {uploadedImages.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mt-2">
-                {uploadedImages?.map((url, idx) => (
+                {uploadedImages.map((url, idx) => (
                   <div
                     key={idx}
                     className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
@@ -326,13 +269,13 @@ export function AddCategoryDialog({
                       alt={`preview-${idx}`}
                       className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
                     />
-                    <button
+                    <AppButton
                       type="button"
                       onClick={() => removeImage(idx)}
                       className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-70 group-hover:opacity-100 transition"
                     >
                       <Trash2 size={12} />
-                    </button>
+                    </AppButton>
                   </div>
                 ))}
               </div>
@@ -341,21 +284,21 @@ export function AddCategoryDialog({
 
           {/* Action Buttons */}
           <DialogFooter className="mt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4 md:col-span-2 sticky bottom-0 bg-white dark:bg-gray-900 z-10">
-            <Button
+            <AppButton
               variant="outline"
               type="button"
               className="flex items-center gap-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={onClose}
             >
               <XCircle size={16} /> Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               type="submit"
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
               disabled={isUploading}
             >
               <Upload size={16} /> {categoryToEdit ? "Update Category" : "Add Category"}
-            </Button>
+            </AppButton>
           </DialogFooter>
         </form>
       </DialogContent>

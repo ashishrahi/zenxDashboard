@@ -8,7 +8,7 @@ export const useUpdateSubcategory = () => {
 
   return useMutation<ISubcategory, Error, ISubcategory>({
     mutationFn: (updatedSubcategory: ISubcategory) =>
-      SubcategoryService.update(updatedSubcategory.id!, updatedSubcategory),
+      SubcategoryService.update(updatedSubcategory), // Pass only the subcategory object
     onSuccess: () => {
       // Refresh the subcategory list after successful update
       queryClient.invalidateQueries({ queryKey: ["subcategories"] });

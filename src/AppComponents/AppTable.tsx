@@ -22,7 +22,7 @@ interface GlobalTableProps {
   data: any[];
   onEdit?: (row: any) => void;
   onDelete?: (row: any) => void;
-  title?: string; // optional title for the card
+  title?: string;
 }
 
 export const GlobalTable: React.FC<GlobalTableProps> = ({
@@ -33,17 +33,19 @@ export const GlobalTable: React.FC<GlobalTableProps> = ({
   title,
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-6 w-full overflow-x-auto">
+    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-1 w-full">
       {title && (
         <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
           {title}
         </h2>
       )}
-      <Table>
+      <Table className="w-full table-auto">
         <TableHeader>
           <TableRow className="text-zinc-950">
             {columns.map((col) => (
-              <TableHead key={col.key}>{col.label}</TableHead>
+              <TableHead key={col.key} className="truncate max-w-[150px]">
+                {col.label}
+              </TableHead>
             ))}
             {(onEdit || onDelete) && <TableHead>Actions</TableHead>}
           </TableRow>
@@ -54,7 +56,7 @@ export const GlobalTable: React.FC<GlobalTableProps> = ({
               {columns.map((col) => (
                 <TableCell
                   key={col.key}
-                  className="text-foreground dark:text-gray-100"
+                  className="text-foreground dark:text-gray-100 truncate max-w-[150px]"
                 >
                   {col.render ? col.render(row) : row[col.key]}
                 </TableCell>

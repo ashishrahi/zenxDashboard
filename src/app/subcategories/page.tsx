@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useMemo } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
 import { AddSubcategoryDialog } from "@/AppComponents/AppSubcategoryDialog";
@@ -23,8 +24,7 @@ export interface ISubcategoryPayload {
   slug: string;
   description?: string;
   images: string[];
-  gender?: string;
-  categoryId: string; // <-- parent category
+  parentCategoryId: string;
 }
 
 export default function SubcategoryPage() {
@@ -35,14 +35,25 @@ export default function SubcategoryPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<ISubcategory | null>(null);
 
   const { data: subcategories = [], isLoading } = useSubcategories();
-  const { data: categories = []} = useCategories()
-
+  const { data: categories = [] } = useCategories();
 
   const addSubcategory = useAddSubcategory();
   const updateSubcategory = useUpdateSubcategory();
   const deleteSubcategory = useDeleteSubcategory();
 
-  const filteredSubcategories = subcategories?.filter((c) =>
+  // Map category name to _id for editing and convert id to _id
+  const subcategoriesWithCategoryId = useMemo(() => {
+    return subcategories.map(sub => {
+      const categoryObj = categories.find(c => c.name === sub.category);
+      return {
+        ...sub,
+        _id: sub.id, // Convert id to _id
+        parentCategoryId: categoryObj?._id ?? "",
+      };
+    });
+  }, [subcategories, categories]);
+
+  const filteredSubcategories = subcategoriesWithCategoryId.filter(c =>
     c.name.toLowerCase().includes(filterText.toLowerCase())
   );
 
@@ -58,7 +69,8 @@ export default function SubcategoryPage() {
   };
 
   const openEditDialog = (subcategory: ISubcategory) => {
-    setSelectedSubcategory({ ...subcategory, _id: subcategory._id || subcategory._id });
+    const mappedSub = subcategoriesWithCategoryId.find(s => s._id === subcategory._id);
+    setSelectedSubcategory(mappedSub ?? null);
     setIsDialogOpen(true);
   };
 
@@ -123,24 +135,16 @@ export default function SubcategoryPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
-          <PageSizeSelector
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            setCurrentPage={setCurrentPage}
-          />
-          <ShadCNPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+          <PageSizeSelector pageSize={pageSize} setPageSize={setPageSize} setCurrentPage={setCurrentPage} />
+          <ShadCNPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
 
         <AddSubcategoryDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSubmitSubcategory={handleSubmitSubcategory}
-          subcategoryToEdit={selectedSubcategory || undefined}
-          categories ={categories}
+          subcategoryToEdit={selectedSubcategory ?? undefined}
+          categories={categories}
         />
       </div>
     </AppContainer>

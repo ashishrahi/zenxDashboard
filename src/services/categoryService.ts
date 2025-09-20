@@ -19,14 +19,13 @@ export const CategoryService = {
   // Create a new category
   create: async (category: Omit<ICategory, "id">): Promise<ICategory> => {
     const response = await axiosInstance.post("/categories/create", category);
-    return response.data.data; // backend me 'data' field
+    return response?.data?.data; // backend me 'data' field
   },
 
   // Update an existing category
   update: async (category: ICategory): Promise<ICategory> => {
-    console.log('updated', category)
     const response = await axiosInstance.put(`/categories/update/${category._id}`, category);
-    return response.data.data;
+    return response?.data?.data;
   },
 
   // Delete a category by ID

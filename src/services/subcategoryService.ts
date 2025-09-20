@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import axiosInstance from "@/lib/axios";
 import { ISubcategory } from "@/types/subcategoryTypes";
 
@@ -10,17 +10,18 @@ export const SubcategoryService = {
 
   getById: async (id: string): Promise<ISubcategory> => {
     const { data } = await axiosInstance.get(`/subcategories/${id}`);
-    return data.data;
+    return data?.data;
   },
 
-  create: async (subcategory: Omit<ISubcategory, "id">): Promise<ISubcategory> => {
+  create: async (subcategory: Omit<ISubcategory, "_id">): Promise<ISubcategory> => {
     const { data } = await axiosInstance.post("/subcategories/create", subcategory);
-    return data.data;
+    return data?.data;
   },
 
   update: async (subcategory: ISubcategory): Promise<ISubcategory> => {
-    const { data } = await axiosInstance.put(`/subcategories/${subcategory._id}`, subcategory);
-    return data.data;
+    console.log("subcategory", subcategory._id)
+    const { data } = await axiosInstance.put(`/subcategories/update/${subcategory._id}`, subcategory);
+    return data?.data; // <-- ensure consistency
   },
 
   delete: async (id: string): Promise<void> => {
