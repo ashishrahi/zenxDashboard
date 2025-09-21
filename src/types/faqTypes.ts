@@ -1,4 +1,4 @@
 export interface IFAQ{
-    question: string,
-    answer: string,
+    question?: string,
+    answer?: string,
 }
