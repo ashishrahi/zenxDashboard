@@ -9,7 +9,7 @@ export const ProductService = {
   },
 
   getById: async (id: string): Promise<Product> => {
-    const { data } = await axiosInstance.put(`/products/${id}`,);
+    const { data } = await axiosInstance.get(`/products/${id}`,);
     return data?.data;
   },
 

@@ -108,7 +108,7 @@ export default function ProductPage() {
     {
       key: "variants",
       label: "Variants",
-      render: (row: IProduct) => row.variants.length,
+      render: (row: IProduct) => row?.variants?.length,
     },
     {
       key: "stock",
