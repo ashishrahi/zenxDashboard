@@ -25,7 +25,6 @@ import { AppButton } from "./AppButton";
 import { ICategoryPayload } from "@/types/categoriesTypes";
 import Image from "next/image";
 
-
 interface AddCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -56,7 +55,7 @@ export function AddCategoryDialog({
     },
   });
 
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<{ url: string; preview: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   // Populate form when editing
@@ -67,14 +66,30 @@ export function AddCategoryDialog({
       setValue("slug", categoryToEdit.slug ?? "");
       setValue("description", categoryToEdit.description ?? "");
       setValue("images", categoryToEdit.images ?? []);
-      setUploadedImages(categoryToEdit.images ?? []);
+      setUploadedImages(
+        (categoryToEdit.images ?? []).map((url) => ({ url, preview: url }))
+      );
     } else {
       reset();
       setUploadedImages([]);
     }
   }, [categoryToEdit, setValue, reset, isOpen]);
 
-  // Handle image upload
+  // Upload image to server and return hosted URL
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    return data.url; // your backend should return { url: "https://..." }
+  };
+
+  // Handle image selection
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -82,18 +97,20 @@ export function AddCategoryDialog({
     setIsUploading(true);
 
     try {
-      const uploadPromises = Array.from(files).map(
-        (file) =>
-          new Promise<string>((resolve) => {
-            setTimeout(() => resolve(URL.createObjectURL(file)), 500);
-          })
-      );
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // Preview URL for showing immediately
+        const preview = URL.createObjectURL(file);
 
-      const newUrls = await Promise.all(uploadPromises);
-      const newImages = [...(uploadedImages ?? []), ...newUrls];
+        // Upload file to server to get hosted URL
+        const url = await uploadFile(file);
+        return { url, preview };
+      });
 
-      setUploadedImages(newImages);
-      setValue("images", newImages);
+      const newImages = await Promise.all(uploadPromises);
+
+      const updatedImages = [...uploadedImages, ...newImages];
+      setUploadedImages(updatedImages);
+      setValue("images", updatedImages.map((img) => img.url));
     } catch (error) {
       console.error("Error uploading images:", error);
     } finally {
@@ -104,7 +121,7 @@ export function AddCategoryDialog({
   const removeImage = (index: number) => {
     const newImages = uploadedImages.filter((_, i) => i !== index);
     setUploadedImages(newImages);
-    setValue("images", newImages);
+    setValue("images", newImages.map((img) => img.url));
   };
 
   const onSubmit = (data: ICategoryPayload) => {
@@ -253,16 +270,16 @@ export function AddCategoryDialog({
 
             {uploadedImages.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mt-2">
-                {uploadedImages.map((url, idx) => (
+                {uploadedImages.map((img, idx) => (
                   <div
                     key={idx}
                     className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
                   >
                     <Image
-                      src={url}
+                      src={img.preview}
                       alt={`preview-${idx}`}
-                      width={200} // adjust based on your design
-                      height={112} // adjust based on your design
+                      width={200}
+                      height={112}
                       className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
                     />
 
