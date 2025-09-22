@@ -22,6 +22,7 @@ export interface IBannerPayload {
   description?: string;
   image: string;
   isActive?: boolean;
+  link?: string;
 }
 
 interface AddBannerDialogProps {

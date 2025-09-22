@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { Column, GlobalTable } from "@/AppComponents/AppTable";
@@ -34,7 +35,7 @@ export default function ProductPage() {
 
   // Filter products by name or slug
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(filterText.toLowerCase())
+    p.name?.toLowerCase().includes(filterText.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
@@ -71,45 +72,47 @@ export default function ProductPage() {
     deleteProduct.mutate(product._id);
   };
 
- const columns: Column<IProductPayload>[] = [
-  { key: "name", label: "Product Name" },
-  { key: "slug", label: "Slug" },
-  {
-    key: "price",
-    label: "Price",
-    render: (row) => `₹${row.price}`,
-  },
-  {
-    key: "colors",
-    label: "Colors",
-    render: (row) => row.colors.join(", "),
-  },
-  {
-    key: "sizes",
-    label: "Sizes",
-    render: (row) => row.sizes.join(", "),
-  },
-  {
-    key: "variants",
-    label: "Variants",
-    render: (row) => row.variants.length,
-  },
-  {
-    key: "stock",
-    label: "Total Stock",
-    render: (row) => row.stock,
-  },
-  {
-    key: "rating",
-    label: "Rating",
-    render: (row) => row.rating ?? "N/A",
-  },
-  {
-    key: "createdAt",
-    label: "Created At",
-    render: (row) => new Date(row.createdAt ?? "").toLocaleDateString(),
-  },
-];
+  // Columns with safe optional chaining
+  const columns: Column<IProductPayload>[] = [
+    { key: "name", label: "Product Name" },
+    { key: "slug", label: "Slug" },
+    {
+      key: "price",
+      label: "Price",
+      render: (row) => `₹${row.price ?? 0}`,
+    },
+    {
+      key: "colors",
+      label: "Colors",
+      render: (row) => (row.colors?.length ? row.colors.join(", ") : "N/A"),
+    },
+    {
+      key: "sizes",
+      label: "Sizes",
+      render: (row) => (row.sizes?.length ? row.sizes.join(", ") : "N/A"),
+    },
+    {
+      key: "variants",
+      label: "Variants",
+      render: (row) => row.variants?.length ?? 0,
+    },
+    {
+      key: "stock",
+      label: "Total Stock",
+      render: (row) => row.stock ?? 0,
+    },
+    {
+      key: "rating",
+      label: "Rating",
+      render: (row) => row.rating ?? "N/A",
+    },
+    {
+      key: "createdAt",
+      label: "Created At",
+      render: (row) =>
+        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "N/A",
+    },
+  ];
 
   return (
     <AppContainer>
@@ -136,6 +139,7 @@ export default function ProductPage() {
               data={paginatedProducts}
               onEdit={openEditDialog}
               onDelete={handleDelete}
+              title="Products"
             />
           )}
         </div>

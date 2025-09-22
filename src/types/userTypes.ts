@@ -1,10 +1,11 @@
 export interface IUser{
- id?: string,  
+ _id?: string,  
  name?: string,
  username?: string,
  email?: string,
  address?: IAddress,
  phone?: string,
+ role?:string
  }
 
  export interface IAddress{

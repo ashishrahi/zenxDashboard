@@ -16,15 +16,41 @@ export const BannerService = {
     return response?.data?.data;
   },
 
-  // Create a new banner
-  create: async (banner: Omit<IBannerPayload, "_id">): Promise<IBannerPayload> => {
-    const response = await axiosInstance.post("/banners/create", banner);
+  // Create a new banner (supports image files)
+  create: async (banner: Omit<IBannerPayload, "_id" | "imageFile"> & { imageFile?: File }) => {
+    const formData = new FormData();
+    formData.append("title", banner.title ?? "");
+    formData.append("link", banner.link ?? "");
+    formData.append("description", banner.description ?? "");
+
+    // Append image file if provided
+    if (banner.imageFile) {
+      formData.append("imageFile", banner.imageFile);
+    }
+
+    const response = await axiosInstance.post("/banners/create", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
     return response?.data?.data;
   },
 
-  // Update an existing banner
-  update: async (banner: IBannerPayload): Promise<IBannerPayload> => {
-    const response = await axiosInstance.put(`/banners/update/${banner._id}`, banner);
+  // Update an existing banner (supports image file)
+  update: async (banner: IBannerPayload & { imageFile?: File }) => {
+    const formData = new FormData();
+    formData.append("title", banner.title ?? "");
+    formData.append("link", banner.link ?? "");
+    formData.append("description", banner.description ?? "");
+
+    // Append new image file if provided
+    if (banner.imageFile) {
+      formData.append("imageFile", banner.imageFile);
+    }
+
+    const response = await axiosInstance.put(`/banners/update/${banner._id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
     return response?.data?.data;
   },
 

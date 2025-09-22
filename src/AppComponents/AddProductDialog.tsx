@@ -20,10 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, Trash2, XCircle, Edit3, Plus } from "lucide-react";
+import { Trash2, XCircle, Edit3, Plus } from "lucide-react";
 import { useCategories } from "@/hooks/Categories/useCategories";
 import { useSubcategories } from "@/hooks/Subcategories/useSubcategories";
-import { IProductPayload, AddProductDialogProps} from "@/types/productTypes";
+import { IProductPayload, AddProductDialogProps } from "@/types/productTypes";
 import Image from "next/image";
 
 export function AddProductDialog({
@@ -46,8 +46,8 @@ export function AddProductDialog({
       slug: "",
       price: 0,
       description: "",
-      category: "",
-      subCategory: "",
+      categoryId: "",
+      subcategoryId: "",
       sizes: [],
       colors: [],
       variants: [],
@@ -56,83 +56,31 @@ export function AddProductDialog({
       delivery: "",
       rating: 0,
       stock: 0,
-      images: [],
     },
   });
 
   const { fields: variantFields, append: appendVariant, remove: removeVariant } =
     useFieldArray({ control, name: "variants" });
 
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-
   const { data: categories = [] } = useCategories();
-  const selectedCategoryId = watch("category");
+  const selectedCategoryId = watch("categoryId");
   const { data: subcategories = [] } = useSubcategories();
   const [categorySearch, setCategorySearch] = useState("");
   const [subcategorySearch, setSubcategorySearch] = useState("");
 
   // Populate form for editing
-useEffect(() => {
-  if (productToEdit) {
-    (Object.keys(productToEdit) as (keyof IProductPayload)[]).forEach((key) => {
-      const value = productToEdit[key];
-      if (value !== undefined) {
-        setValue(key, value);
-      }
-    });
-    setUploadedImages(productToEdit.images ?? []);
-  } else {
-    reset();
-    setUploadedImages([]);
-  }
-}, [productToEdit, setValue, reset, isOpen]);
-
-
-  // Upload helper
-  const uploadFiles = async (files: FileList | null): Promise<string[]> => {
-    if (!files) return [];
-    const urls = await Promise.all(
-      Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append("image", file);
-        const res = await fetch("/api/upload", { method: "POST", body: formData });
-        const data = await res.json();
-        return data.url; // backend returns hosted URL
-      })
-    );
-    return urls;
-  };
-
-  // Main images
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsUploading(true);
-    try {
-      const newUrls = await uploadFiles(e.target.files);
-      const allImages = [...uploadedImages, ...newUrls];
-      setUploadedImages(allImages);
-      setValue("images", allImages);
-    } catch (err) {
-      console.error("Error uploading images:", err);
-    } finally {
-      setIsUploading(false);
+  useEffect(() => {
+    if (productToEdit) {
+      (Object.keys(productToEdit) as (keyof IProductPayload)[]).forEach((key) => {
+        const value = productToEdit[key];
+        if (value !== undefined) {
+          setValue(key, value);
+        }
+      });
+    } else {
+      reset();
     }
-  };
-
-  const removeImage = (index: number) => {
-    const newImages = uploadedImages.filter((_, i) => i !== index);
-    setUploadedImages(newImages);
-    setValue("images", newImages);
-  };
-
-  // Variant images
-  const handleVariantImageChange = async (index: number, files: FileList | null) => {
-    if (!files) return;
-    const urls = await uploadFiles(files);
-    const variants = [...watch("variants")];
-    variants[index].images = [...(variants[index].images || []), ...urls];
-    setValue("variants", variants);
-  };
+  }, [productToEdit, setValue, reset, isOpen]);
 
   const generateSlugFromName = (name: string) =>
     name?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ?? "";
@@ -145,27 +93,33 @@ useEffect(() => {
     }
   };
 
-const onSubmit = (data: IProductPayload) => {
-  const cleanedData: IProductPayload = {
-    ...data,
-    sizes: data.sizes.map((s) => s.trim()),
-    colors: data.colors.map((c) => c.trim()),
-    variants: data.variants.map((v) => ({ ...v, images: v.images ?? [] })),
-    _id: data._id, // may be undefined for new product
-  };
+  // Sync colors from variants automatically
+  const variants = watch("variants");
+  useEffect(() => {
+    const variantColors = variants.map(v => v.color?.trim()).filter(Boolean);
+    setValue("colors", Array.from(new Set(variantColors)));
+  }, [variants, setValue]);
 
-  onSubmitProduct(cleanedData);
-  reset();
-  setUploadedImages([]);
-  onClose();
-};
+  const onSubmit = (data: IProductPayload) => {
+    const cleanedData: IProductPayload = {
+      ...data,
+      sizes: data.sizes.map((s) => s.trim()),
+      colors: data.colors.map((c) => c.trim()),
+      variants: data.variants.map((v) => ({ ...v, images: v.images ?? [] })),
+      _id: data._id,
+    };
+
+    onSubmitProduct(cleanedData);
+    reset();
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl rounded-xl shadow-2xl border border-border bg-background text-foreground dark:bg-background dark:text-foreground max-h-[80vh] overflow-y-auto scrollbar-hide">
+      <DialogContent className="w-full max-w-5xl rounded-xl shadow-2xl border border-border bg-background text-foreground dark:bg-background dark:text-foreground max-h-[80vh] overflow-y-auto scrollbar-hide">
         <DialogHeader className="pb-4 border-b border-border sticky top-0 z-10 bg-background">
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            {productToEdit ? <Edit3 size={20} /> : <Upload size={20} />}
+            {productToEdit ? <Edit3 size={20} /> : <Plus size={20} />}
             {productToEdit ? "Edit Product" : "Add Product"}
           </DialogTitle>
         </DialogHeader>
@@ -199,11 +153,11 @@ const onSubmit = (data: IProductPayload) => {
             {errors.stock && <p className="text-red-500 text-xs">{errors.stock.message}</p>}
           </div>
 
-          {/* Category & Subcategory */}
+          {/* Category */}
           <div className="space-y-2">
             <Label>Category</Label>
             <Controller
-              name="category"
+              name="categoryId"
               control={control}
               rules={{ required: "Category required" }}
               render={({ field }) => {
@@ -215,7 +169,7 @@ const onSubmit = (data: IProductPayload) => {
                     value={field.value}
                     onValueChange={(val) => {
                       field.onChange(val);
-                      setValue("subCategory", "");
+                      setValue("subcategoryId", "");
                     }}
                   >
                     <SelectTrigger>
@@ -242,18 +196,20 @@ const onSubmit = (data: IProductPayload) => {
             />
           </div>
 
+          {/* Subcategory */}
           <div className="space-y-2">
             <Label>Subcategory</Label>
             <Controller
-              name="subCategory"
+              name="subcategoryId"
               control={control}
               rules={{ required: "Subcategory required" }}
               render={({ field }) => {
                 const filteredSubcategories = subcategories.filter(
                   (sub) =>
-                    sub.categoryId === selectedCategoryId &&
+                    String(sub.categoryId) === String(selectedCategoryId) &&
                     sub.name?.toLowerCase().includes(subcategorySearch.toLowerCase())
                 );
+
                 return (
                   <Select value={field.value} onValueChange={field.onChange} disabled={!selectedCategoryId}>
                     <SelectTrigger>
@@ -298,16 +254,16 @@ const onSubmit = (data: IProductPayload) => {
           <div className="space-y-2 md:col-span-2">
             <Label>Sizes (comma separated)</Label>
             <Input
-              {...register("sizes")}
               placeholder="e.g., S,M,L"
+              value={watch("sizes").join(",")}
               onChange={(e) => setValue("sizes", e.target.value.split(",").map(s => s.trim()))}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Colors (comma separated)</Label>
             <Input
-              {...register("colors")}
               placeholder="e.g., Red,Blue"
+              value={watch("colors").join(",")}
               onChange={(e) => setValue("colors", e.target.value.split(",").map(c => c.trim()))}
             />
           </div>
@@ -324,6 +280,7 @@ const onSubmit = (data: IProductPayload) => {
                     <Trash2 size={16} />
                   </Button>
                 </div>
+
                 {/* Variant Images */}
                 <div>
                   <label htmlFor={`variantUpload-${index}`} className="cursor-pointer bg-secondary px-3 py-1 rounded text-white">
@@ -335,7 +292,14 @@ const onSubmit = (data: IProductPayload) => {
                     multiple
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => handleVariantImageChange(index, e.target.files)}
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (!files) return;
+                      const updated = [...watch("variants")];
+                      const blobUrls = Array.from(files).map(file => URL.createObjectURL(file));
+                      updated[index].images = [...(updated[index].images || []), ...blobUrls];
+                      setValue("variants", updated);
+                    }}
                   />
                   {watch("variants")[index]?.images?.length > 0 && (
                     <div className="flex gap-2 mt-2">
@@ -371,49 +335,13 @@ const onSubmit = (data: IProductPayload) => {
             <Textarea {...register("description")} />
           </div>
 
-          {/* Main Images */}
-          <div className="space-y-2 md:col-span-2">
-            <Label>Images</Label>
-            <div className="flex items-center gap-3">
-              <label htmlFor="imageUpload" className="flex gap-1 cursor-pointer bg-primary text-primary-foreground px-4 py-2 rounded-lg">
-                <Upload size={16} />
-                {isUploading ? "Uploading..." : "Upload Images"}
-              </label>
-              <input
-                type="file"
-                id="imageUpload"
-                multiple
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-                disabled={isUploading}
-              />
-            </div>
-            {uploadedImages.length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-2">
-                {uploadedImages.map((url, idx) => (
-                  <div key={idx} className="relative w-full h-28">
-                    <Image src={url} alt={`preview-${idx}`} fill className="object-cover rounded-lg" sizes="100vw" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(idx)}
-                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Actions */}
           <DialogFooter className="mt-4 flex justify-end gap-3 md:col-span-2">
             <Button variant="destructive" type="button" onClick={onClose}>
               <XCircle size={16} /> Cancel
             </Button>
-            <Button type="submit" disabled={isUploading}>
-              <Upload size={16} /> {productToEdit ? "Update Product" : "Add Product"}
+            <Button type="submit">
+              {productToEdit ? "Update Product" : "Add Product"}
             </Button>
           </DialogFooter>
         </form>

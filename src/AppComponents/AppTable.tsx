@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,29 +11,37 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
-// Column interface is generic over RowType
+// Column interface
 export interface Column<RowType> {
-  key: keyof RowType; // must be a valid property of RowType
+  key: keyof RowType;
   label: string;
-  render?: (row: RowType) => React.ReactNode; // optional custom render
+  render?: (row: RowType) => React.ReactNode;
 }
 
 export interface GlobalTableProps<RowType extends { _id: string }> {
   columns: Column<RowType>[];
-  data: RowType[];
+  data?: RowType[]; // optional, can be undefined initially
   onEdit?: (row: RowType) => void;
   onDelete?: (row: RowType) => void;
   title?: string;
 }
 
-
 export function GlobalTable<RowType extends { _id: string }>({
   columns,
-  data,
+  data = [], // default to empty array
   onEdit,
   onDelete,
   title,
 }: GlobalTableProps<RowType>) {
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure the component only renders on the client to avoid SSR hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null; // render nothing on server
+
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-1 w-full">
       {title && (
@@ -47,7 +55,7 @@ export function GlobalTable<RowType extends { _id: string }>({
           <TableRow className="text-zinc-950">
             {columns.map((col) => (
               <TableHead key={String(col.key)} className="truncate max-w-[150px]">
-                {col.label}
+                {col.label ?? ""}
               </TableHead>
             ))}
             {(onEdit || onDelete) && <TableHead>Actions</TableHead>}
@@ -58,15 +66,12 @@ export function GlobalTable<RowType extends { _id: string }>({
           {data.map((row) => (
             <TableRow key={row._id}>
               {columns.map((col) => (
-               <TableCell
-  key={String(col.key)}
-  className="text-foreground dark:text-gray-100 truncate max-w-[150px]"
->
-  {col.render
-    ? col.render(row)
-    : String(row[col.key] ?? "")} {/* convert value to string to satisfy ReactNode */}
-</TableCell>
-
+                <TableCell
+                  key={String(col.key)}
+                  className="text-foreground dark:text-gray-100 truncate max-w-[150px]"
+                >
+                  {col.render ? col.render(row) : String(row?.[col.key] ?? "")}
+                </TableCell>
               ))}
 
               {(onEdit || onDelete) && (

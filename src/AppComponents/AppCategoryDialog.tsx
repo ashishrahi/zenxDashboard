@@ -23,20 +23,20 @@ import {
 } from "lucide-react";
 import { AppButton } from "./AppButton";
 import { ICategoryPayload } from "@/types/categoriesTypes";
-import Image from "next/image";
+import { CategoryService } from "@/services/categoryService";
 
 interface AddCategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmitCategory: (category: ICategoryPayload) => void;
   categoryToEdit?: ICategoryPayload;
+  onCategorySaved?: () => void;
 }
 
 export function AddCategoryDialog({
   isOpen,
   onClose,
-  onSubmitCategory,
   categoryToEdit,
+  onCategorySaved,
 }: AddCategoryDialogProps) {
   const {
     register,
@@ -55,7 +55,8 @@ export function AddCategoryDialog({
     },
   });
 
-  const [uploadedImages, setUploadedImages] = useState<{ url: string; preview: string }[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]); // For preview
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // For sending to backend
   const [isUploading, setIsUploading] = useState(false);
 
   // Populate form when editing
@@ -65,72 +66,16 @@ export function AddCategoryDialog({
       setValue("name", categoryToEdit.name ?? "");
       setValue("slug", categoryToEdit.slug ?? "");
       setValue("description", categoryToEdit.description ?? "");
-      setValue("images", categoryToEdit.images ?? []);
-      setUploadedImages(
-        (categoryToEdit.images ?? []).map((url) => ({ url, preview: url }))
-      );
+      setUploadedImages(categoryToEdit.images ?? []);
+      setUploadedFiles([]); // New files will be appended if user uploads
     } else {
       reset();
       setUploadedImages([]);
+      setUploadedFiles([]);
     }
   }, [categoryToEdit, setValue, reset, isOpen]);
 
-  // Upload image to server and return hosted URL
-  const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await res.json();
-    return data.url; // your backend should return { url: "https://..." }
-  };
-
-  // Handle image selection
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    setIsUploading(true);
-
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        // Preview URL for showing immediately
-        const preview = URL.createObjectURL(file);
-
-        // Upload file to server to get hosted URL
-        const url = await uploadFile(file);
-        return { url, preview };
-      });
-
-      const newImages = await Promise.all(uploadPromises);
-
-      const updatedImages = [...uploadedImages, ...newImages];
-      setUploadedImages(updatedImages);
-      setValue("images", updatedImages.map((img) => img.url));
-    } catch (error) {
-      console.error("Error uploading images:", error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    const newImages = uploadedImages.filter((_, i) => i !== index);
-    setUploadedImages(newImages);
-    setValue("images", newImages.map((img) => img.url));
-  };
-
-  const onSubmit = (data: ICategoryPayload) => {
-    onSubmitCategory(data);
-    reset();
-    setUploadedImages([]);
-    onClose();
-  };
-
+  // Generate slug from name
   const generateSlugFromName = (name: string) =>
     name?.toLowerCase()?.replace(/[^a-z0-9]+/g, "-")?.replace(/(^-|-$)/g, "") ?? "";
 
@@ -140,6 +85,58 @@ export function AddCategoryDialog({
 
     if (!categoryToEdit?.slug || watch("slug") === generateSlugFromName(categoryToEdit.name ?? "")) {
       setValue("slug", generateSlugFromName(name));
+    }
+  };
+
+  // Handle image upload (preview + store files)
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setIsUploading(true);
+
+    const filesArray = Array.from(files);
+
+    // Preview URLs
+    const urls = filesArray.map((file) => URL.createObjectURL(file));
+    setUploadedImages((prev) => [...prev, ...urls]);
+    setUploadedFiles((prev) => [...prev, ...filesArray]);
+
+    setIsUploading(false);
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const onSubmit = async (data: ICategoryPayload) => {
+    setIsUploading(true);
+
+    try {
+      if (categoryToEdit?._id) {
+        // Update category
+        await CategoryService.update({
+          ...data,
+          images: uploadedFiles,
+        });
+      } else {
+        // Create new category
+        await CategoryService.create({
+          ...data,
+          images: uploadedFiles,
+        });
+      }
+
+      reset();
+      setUploadedImages([]);
+      setUploadedFiles([]);
+      onClose();
+      onCategorySaved?.(); // optional callback to refresh list
+    } catch (err) {
+      console.error("Error saving category:", err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -241,8 +238,9 @@ export function AddCategoryDialog({
             <div className="flex items-center gap-3">
               <label
                 htmlFor="imageUpload"
-                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${isUploading ? "opacity-70 cursor-not-allowed" : ""
-                  }`}
+                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${
+                  isUploading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               >
                 <Upload size={16} />
                 {isUploading ? "Uploading..." : "Upload Images"}
@@ -261,28 +259,18 @@ export function AddCategoryDialog({
               </span>
             </div>
 
-            {isUploading && (
-              <div className="text-blue-500 text-xs flex items-center gap-1 mt-1">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
-                Processing images...
-              </div>
-            )}
-
             {uploadedImages.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mt-2">
-                {uploadedImages.map((img, idx) => (
+                {uploadedImages.map((url, idx) => (
                   <div
                     key={idx}
                     className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
                   >
-                    <Image
-                      src={img.preview}
+                    <img
+                      src={url}
                       alt={`preview-${idx}`}
-                      width={200}
-                      height={112}
                       className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
                     />
-
                     <AppButton
                       type="button"
                       onClick={() => removeImage(idx)}

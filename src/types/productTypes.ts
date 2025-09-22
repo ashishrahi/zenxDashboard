@@ -15,8 +15,8 @@ export interface Product {
   colors?: string[];
   variants?: IProductVariant[];
   sizes?: string[];
-  category?: string;        // category id
-  subCategory?: string;     // subcategory id
+  categoryId?: string;        // category id
+  subcategoryId?: string;     // subcategory id
   description?: string;
   material?: string;
   care?: string;
@@ -35,8 +35,8 @@ export interface IProductPayload {
   colors: string[];
   variants: IProductVariant[];
   sizes: string[];
-  category: string;
-  subCategory: string;
+  categoryId: string;
+  subcategoryId: string;
   description?: string;
   material?: string;
   care?: string;
