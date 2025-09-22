@@ -14,18 +14,34 @@ import {
 } from "@/hooks/Categories/index";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
-import { TableColumn } from "@/types/categoriesTypes";
+
+// Column type for table
+export interface Column<RowType> {
+  key: keyof RowType; // must be a valid property of the row
+  label: string;
+  render?: (row: RowType) => React.ReactNode;
+}
+
+export interface GlobalTableProps<RowType extends { _id: string }> {
+  columns: Column<RowType>[];
+  data: RowType[];
+  onEdit?: (row: RowType) => void;
+  onDelete?: (row: RowType) => void;
+  title?: string;
+}
+
+// Category payload
 export interface ICategoryPayload {
-   _id: string;       // Required for database objects
+  _id: string;
   name: string;
   slug: string;
   description?: string;
-  images: string[];  // Must match ICategoryPayload
+  images: string[];
   gender?: string;
-  createdAt: string; // or Date if your API returns Date objects
-  updatedAt: string; // or Date
-
+  createdAt: string;
+  updatedAt: string;
 }
+
 export default function CategoryPage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,10 +54,9 @@ export default function CategoryPage() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
 
- const filteredCategories = categories.filter((c) =>
-  (c.name ?? "").toLowerCase().includes(filterText.toLowerCase())
-);
-
+  const filteredCategories = categories.filter((c) =>
+    (c.name ?? "").toLowerCase().includes(filterText.toLowerCase())
+  );
 
   const totalPages = Math.ceil(filteredCategories.length / pageSize);
   const paginatedCategories = filteredCategories.slice(
@@ -49,59 +64,51 @@ export default function CategoryPage() {
     currentPage * pageSize
   );
 
-  // Open Add Dialog
+  // Dialog open functions
   const openAddDialog = () => {
     setSelectedCategory(null);
     setIsDialogOpen(true);
   };
 
-  // Open Edit Dialog
   const openEditDialog = (category: ICategoryPayload) => {
-    setSelectedCategory({
-      ...category,
-      _id: category._id || category._id,
-    });
+    setSelectedCategory(category);
     setIsDialogOpen(true);
   };
 
-  // Submit Category
-const handleSubmitCategory = (category: ICategoryPayload) => {
-  if (category._id) {
-    // Update existing category
-    updateCategory.mutate(category);
-  } else {
-    // Add new category
-    addCategory.mutate(category);
-  }
-  setIsDialogOpen(false);
-};
+  // Submit category
+  const handleSubmitCategory = (category: ICategoryPayload) => {
+    if (category._id) {
+      updateCategory.mutate(category);
+    } else {
+      addCategory.mutate(category);
+    }
+    setIsDialogOpen(false);
+  };
 
-
-
-  // Delete Category
+  // Delete category
   const handleDelete = (category: ICategoryPayload) => deleteCategory.mutate(category._id);
 
-  const columns: TableColumn<ICategoryPayload>[] = [
-  { key: "name", label: "Name" },
-  { key: "slug", label: "Slug" },
-  { key: "description", label: "Description" },
-  {
-    key: "images",
-    label: "Images",
-    render: (row) => row.images?.length || "No images",
-  },
-  {
-    key: "createdAt",
-    label: "Created At",
-    render: (row) => new Date(row.createdAt).toLocaleDateString(),
-  },
-  {
-    key: "updatedAt",
-    label: "Updated At",
-    render: (row) => new Date(row.updatedAt).toLocaleDateString(),
-  },
-];
-
+  // Table columns
+  const columns: Column<ICategoryPayload>[] = [
+    { key: "name", label: "Name" },
+    { key: "slug", label: "Slug" },
+    { key: "description", label: "Description" },
+    {
+      key: "images",
+      label: "Images",
+      render: (row) => row.images?.length || "No images",
+    },
+    {
+      key: "createdAt",
+      label: "Created At",
+      render: (row) => new Date(row.createdAt).toLocaleDateString(),
+    },
+    {
+      key: "updatedAt",
+      label: "Updated At",
+      render: (row) => new Date(row.updatedAt).toLocaleDateString(),
+    },
+  ];
 
   return (
     <AppContainer>
@@ -123,7 +130,7 @@ const handleSubmitCategory = (category: ICategoryPayload) => {
           {isLoading ? (
             <TableSkeleton rows={pageSize} />
           ) : (
-            <GlobalTable
+            <GlobalTable<ICategoryPayload>
               columns={columns}
               data={paginatedCategories}
               onEdit={openEditDialog}

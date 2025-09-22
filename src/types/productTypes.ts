@@ -28,7 +28,7 @@ export interface Product {
 }
 
 export interface IProductPayload {
-  _id?: string;
+  _id: string;
   name: string;
   slug: string;
   price: number;

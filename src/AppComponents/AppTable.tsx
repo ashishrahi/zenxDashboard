@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 
 // Column interface is generic over RowType
 export interface Column<RowType> {
-  key: keyof RowType; // strictly a key of RowType
+  key: keyof RowType; // must be a valid property of RowType
   label: string;
   render?: (row: RowType) => React.ReactNode; // optional custom render
 }
@@ -25,6 +25,7 @@ export interface GlobalTableProps<RowType extends { _id: string }> {
   onDelete?: (row: RowType) => void;
   title?: string;
 }
+
 
 export function GlobalTable<RowType extends { _id: string }>({
   columns,
