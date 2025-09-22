@@ -44,18 +44,20 @@ export default function SubcategoryPage() {
   // Map category name to _id for editing and convert id to _id
   const subcategoriesWithCategoryId = useMemo(() => {
     return subcategories.map(sub => {
-      const categoryObj = categories.find(c => c.name === sub.category);
+      const categoryObj = categories.find(c => c._id === sub.categoryId); // use categoryId
       return {
         ...sub,
-        _id: sub.id, // Convert id to _id
+        _id: sub._id,
         parentCategoryId: categoryObj?._id ?? "",
       };
     });
   }, [subcategories, categories]);
+  ;
 
   const filteredSubcategories = subcategoriesWithCategoryId.filter(c =>
-    c.name.toLowerCase().includes(filterText.toLowerCase())
+    (c.name ?? "").toLowerCase().includes(filterText.toLowerCase())
   );
+
 
   const totalPages = Math.ceil(filteredSubcategories.length / pageSize);
   const paginatedSubcategories = filteredSubcategories.slice(
@@ -83,7 +85,10 @@ export default function SubcategoryPage() {
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (subcategory: ISubcategory) => deleteSubcategory.mutate(subcategory._id);
+const handleDelete = (subcategory: ISubcategory) => {
+  if (!subcategory._id) return; // skip if _id is undefined
+  deleteSubcategory.mutate(subcategory._id);
+};
 
   const columns = [
     { key: "name", label: "Name" },
@@ -93,19 +98,22 @@ export default function SubcategoryPage() {
     {
       key: "images",
       label: "Images",
-      render: (row: any) => row.images?.length || "No images",
+      render: (row: ISubcategory) => (row.images?.length ?? 0) || "No images",
     },
     {
       key: "createdAt",
       label: "Created At",
-      render: (row: any) => new Date(row.createdAt).toLocaleDateString(),
+      render: (row: ISubcategory) =>
+        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "N/A",
     },
     {
       key: "updatedAt",
       label: "Updated At",
-      render: (row: any) => new Date(row.updatedAt).toLocaleDateString(),
+      render: (row: ISubcategory) =>
+        row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : "N/A",
     },
   ];
+
 
   return (
     <AppContainer>
@@ -118,9 +126,8 @@ export default function SubcategoryPage() {
         />
 
         <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
-            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-          }`}
+          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+            }`}
         >
           {isLoading ? (
             <TableSkeleton rows={pageSize} />
@@ -143,9 +150,21 @@ export default function SubcategoryPage() {
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSubmitSubcategory={handleSubmitSubcategory}
-          subcategoryToEdit={selectedSubcategory ?? undefined}
+          subcategoryToEdit={
+            selectedSubcategory
+              ? {
+                _id: selectedSubcategory._id,
+                name: selectedSubcategory.name || "",
+                slug: selectedSubcategory.slug || "",
+                description: selectedSubcategory.description || "",
+                images: selectedSubcategory.images || [],
+                parentCategoryId: selectedSubcategory.categoryId || "", // map categoryId
+              }
+              : undefined
+          }
           categories={categories}
         />
+
       </div>
     </AppContainer>
   );

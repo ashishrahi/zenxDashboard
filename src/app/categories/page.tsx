@@ -12,35 +12,36 @@ import {
   useUpdateCategory,
   useDeleteCategory,
 } from "@/hooks/Categories/index";
-import { ICategory } from "@/types/categoriesTypes";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
-
+import { TableColumn } from "@/types/categoriesTypes";
 export interface ICategoryPayload {
-  _id?: string;       // <-- Add this
+   _id: string;       // Required for database objects
   name: string;
   slug: string;
   description?: string;
-  images: string[];
+  images: string[];  // Must match ICategoryPayload
   gender?: string;
+  createdAt: string; // or Date if your API returns Date objects
+  updatedAt: string; // or Date
+
 }
-
-
 export default function CategoryPage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<ICategory | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ICategoryPayload | null>(null);
 
   const { data: categories = [], isLoading } = useCategories();
   const addCategory = useAddCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
 
-  const filteredCategories = categories.filter((c) =>
-    c.name.toLowerCase().includes(filterText.toLowerCase())
-  );
+ const filteredCategories = categories.filter((c) =>
+  (c.name ?? "").toLowerCase().includes(filterText.toLowerCase())
+);
+
 
   const totalPages = Math.ceil(filteredCategories.length / pageSize);
   const paginatedCategories = filteredCategories.slice(
@@ -55,7 +56,7 @@ export default function CategoryPage() {
   };
 
   // Open Edit Dialog
-  const openEditDialog = (category: ICategory) => {
+  const openEditDialog = (category: ICategoryPayload) => {
     setSelectedCategory({
       ...category,
       _id: category._id || category._id,
@@ -64,8 +65,7 @@ export default function CategoryPage() {
   };
 
   // Submit Category
- const handleSubmitCategory = (category: ICategoryPayload) => {
-
+const handleSubmitCategory = (category: ICategoryPayload) => {
   if (category._id) {
     // Update existing category
     updateCategory.mutate(category);
@@ -77,29 +77,31 @@ export default function CategoryPage() {
 };
 
 
-  // Delete Category
-  const handleDelete = (category: ICategory) => deleteCategory.mutate(category._id);
 
-  const columns = [
-    { key: "name", label: "Name" },
-    { key: "slug", label: "Slug" },
-    { key: "description", label: "Description" },
-    {
-      key: "images",
-      label: "Images",
-      render: (row: any) => row.images?.length || "No images",
-    },
-    {
-      key: "createdAt",
-      label: "Created At",
-      render: (row: any) => new Date(row.createdAt).toLocaleDateString(),
-    },
-    {
-      key: "updatedAt",
-      label: "Updated At",
-      render: (row: any) => new Date(row.updatedAt).toLocaleDateString(),
-    },
-  ];
+  // Delete Category
+  const handleDelete = (category: ICategoryPayload) => deleteCategory.mutate(category._id);
+
+  const columns: TableColumn<ICategoryPayload>[] = [
+  { key: "name", label: "Name" },
+  { key: "slug", label: "Slug" },
+  { key: "description", label: "Description" },
+  {
+    key: "images",
+    label: "Images",
+    render: (row) => row.images?.length || "No images",
+  },
+  {
+    key: "createdAt",
+    label: "Created At",
+    render: (row) => new Date(row.createdAt).toLocaleDateString(),
+  },
+  {
+    key: "updatedAt",
+    label: "Updated At",
+    render: (row) => new Date(row.updatedAt).toLocaleDateString(),
+  },
+];
+
 
   return (
     <AppContainer>

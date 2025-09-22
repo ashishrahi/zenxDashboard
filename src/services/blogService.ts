@@ -19,7 +19,7 @@ export const BlogService = {
   },
 
   update: async (blog: IBlog): Promise<IBlog> => {
-    const { data } = await axiosInstance.put(`/blogs/${blog.id}`, blog);
+    const { data } = await axiosInstance.put(`/blogs/${blog._id}`, blog);
     return data;
   },
 

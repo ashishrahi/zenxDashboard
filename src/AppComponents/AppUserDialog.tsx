@@ -41,19 +41,20 @@ export function AddUserDialog({
   });
 
   // Prefill form when editing
-  useEffect(() => {
-    if (userToEdit) {
-      setValue("name", userToEdit.name);
-      setValue("username", userToEdit.username);
-      setValue("email", userToEdit.email);
-      setValue("phone", userToEdit.phone);
-      setValue("address.street", userToEdit.address.street);
-      setValue("address.city", userToEdit.address.city);
-      setValue("address.zipcode", userToEdit.address.zipcode);
-    } else {
-      reset();
-    }
-  }, [userToEdit, setValue, reset, isOpen]);
+ useEffect(() => {
+  if (userToEdit) {
+    setValue("name", userToEdit.name ?? "");
+    setValue("username", userToEdit.username ?? "");
+    setValue("email", userToEdit.email ?? "");
+    setValue("phone", userToEdit.phone ?? "");
+    setValue("address.street", userToEdit.address?.street ?? "");
+    setValue("address.city", userToEdit.address?.city ?? "");
+    setValue("address.zipcode", userToEdit.address?.zipcode ?? "");
+  } else {
+    reset();
+  }
+}, [userToEdit, setValue, reset, isOpen]);
+
 
   const onSubmit = (data: IUser) => {
     if (userToEdit) data = { ...data, ...userToEdit }; // preserve any existing properties if needed

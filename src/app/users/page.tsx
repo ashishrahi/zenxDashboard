@@ -15,7 +15,6 @@ import {
 import { IUser } from "@/types/userTypes";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
-import { UserIcon } from "lucide-react";
 
 export default function UserPage() {
   const [filterText, setFilterText] = useState("");
@@ -29,9 +28,10 @@ export default function UserPage() {
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
 
-  const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(filterText.toLowerCase())
-  );
+ const filteredUsers = users.filter((u) =>
+  (u.name ?? "").toLowerCase().includes(filterText.toLowerCase())
+);
+s
 
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = filteredUsers.slice(
@@ -55,7 +55,11 @@ export default function UserPage() {
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (user: IUser) => deleteUser.mutate(user.id);
+ const handleDelete = (user: IUser) => {
+  if (!user.id) throw new Error("User ID is missing");
+  deleteUser.mutate(user.id);
+};
+
 
   const columns = [
     { key: "name", label: "Name" },

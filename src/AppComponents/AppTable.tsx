@@ -11,27 +11,28 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
-interface Column {
-  key: string;
+// Column interface is generic over RowType
+export interface Column<RowType> {
+  key: keyof RowType; // strictly a key of RowType
   label: string;
-  render?: (row: any) => React.ReactNode;
+  render?: (row: RowType) => React.ReactNode; // optional custom render
 }
 
-interface GlobalTableProps {
-  columns: Column[];
-  data: any[];
-  onEdit?: (row: any) => void;
-  onDelete?: (row: any) => void;
+export interface GlobalTableProps<RowType extends { _id: string }> {
+  columns: Column<RowType>[];
+  data: RowType[];
+  onEdit?: (row: RowType) => void;
+  onDelete?: (row: RowType) => void;
   title?: string;
 }
 
-export const GlobalTable: React.FC<GlobalTableProps> = ({
+export function GlobalTable<RowType extends { _id: string }>({
   columns,
   data,
   onEdit,
   onDelete,
   title,
-}) => {
+}: GlobalTableProps<RowType>) {
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-1 w-full">
       {title && (
@@ -39,28 +40,34 @@ export const GlobalTable: React.FC<GlobalTableProps> = ({
           {title}
         </h2>
       )}
+
       <Table className="w-full table-auto">
         <TableHeader>
           <TableRow className="text-zinc-950">
             {columns.map((col) => (
-              <TableHead key={col.key} className="truncate max-w-[150px]">
+              <TableHead key={String(col.key)} className="truncate max-w-[150px]">
                 {col.label}
               </TableHead>
             ))}
             {(onEdit || onDelete) && <TableHead>Actions</TableHead>}
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {data.map((row) => (
             <TableRow key={row._id}>
               {columns.map((col) => (
-                <TableCell
-                  key={col.key}
-                  className="text-foreground dark:text-gray-100 truncate max-w-[150px]"
-                >
-                  {col.render ? col.render(row) : row[col.key]}
-                </TableCell>
+               <TableCell
+  key={String(col.key)}
+  className="text-foreground dark:text-gray-100 truncate max-w-[150px]"
+>
+  {col.render
+    ? col.render(row)
+    : String(row[col.key] ?? "")} {/* convert value to string to satisfy ReactNode */}
+</TableCell>
+
               ))}
+
               {(onEdit || onDelete) && (
                 <TableCell>
                   {onEdit && (
@@ -86,4 +93,4 @@ export const GlobalTable: React.FC<GlobalTableProps> = ({
       </Table>
     </div>
   );
-};
+}

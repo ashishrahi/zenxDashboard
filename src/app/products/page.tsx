@@ -13,39 +13,18 @@ import {
   useDeleteProduct,
 } from "@/hooks/Products";
 
-import { IProduct } from "@/types/productTypes";
+import { IProductPayload } from "@/types/productTypes";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 import { useCategories } from "@/hooks/Categories";
 
-export interface IProductPayload {
-  _id?: string;
-  name: string;
-  slug: string;
-  price: number;
-  colors: string[];
-  variants: {
-    color: string;
-    images: string[];
-    stock: number;
-  }[];
-  sizes: string[];
-  category: string;
-  subCategory: string;
-  description?: string;
-  material?: string;
-  care?: string;
-  delivery?: string;
-  rating?: number;
-  stock: number;
-}
 
 export default function ProductPage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<IProductPayload | null>(null);
 
   const { data: products = [], isLoading } = useProducts();
   const { data: categories = [] } = useCategories();
@@ -71,7 +50,7 @@ export default function ProductPage() {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (product: IProduct) => {
+  const openEditDialog = (product: IProductPayload) => {
     setSelectedProduct({ ...product, _id: product._id });
     setIsDialogOpen(true);
   };
@@ -85,7 +64,10 @@ export default function ProductPage() {
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (product: IProduct) => deleteProduct.mutate(product._id);
+  const handleDelete = (product: IProductPayload) => {
+    if (!product._id) return;
+    deleteProduct.mutate(product._id);
+  };
 
   const columns = [
     { key: "name", label: "Product Name" },
@@ -93,38 +75,38 @@ export default function ProductPage() {
     {
       key: "price",
       label: "Price",
-      render: (row: IProduct) => `₹${row.price}`,
+      render: (row: IProductPayload) => `₹${row.price}`,
     },
     {
       key: "colors",
       label: "Colors",
-      render: (row: IProduct) => row.colors.join(", "),
+      render: (row: IProductPayload) => row.colors.join(", "),
     },
     {
       key: "sizes",
       label: "Sizes",
-      render: (row: IProduct) => row.sizes.join(", "),
+      render: (row: IProductPayload) => row.sizes.join(", "),
     },
     {
       key: "variants",
       label: "Variants",
-      render: (row: IProduct) => row?.variants?.length,
+      render: (row: IProductPayload) => row?.variants?.length,
     },
     {
       key: "stock",
       label: "Total Stock",
-      render: (row: IProduct) => row.stock,
+      render: (row: IProductPayload) => row.stock,
     },
     {
       key: "rating",
       label: "Rating",
-      render: (row: IProduct) => row.rating ?? "N/A",
+      render: (row: IProductPayload) => row.rating ?? "N/A",
     },
     {
       key: "createdAt",
       label: "Created At",
-      render: (row: IProduct) =>
-        new Date(row.createdAt).toLocaleDateString(),
+      render: (row: IProductPayload) =>
+        new Date(row.createdAt ?? "").toLocaleDateString(),
     },
   ];
 
@@ -141,9 +123,8 @@ export default function ProductPage() {
 
         {/* Table */}
         <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
-            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-          }`}
+          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+            }`}
         >
           {isLoading ? (
             <TableSkeleton rows={pageSize} />

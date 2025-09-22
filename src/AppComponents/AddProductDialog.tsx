@@ -23,14 +23,8 @@ import {
 import { Upload, Trash2, XCircle, Edit3, Plus } from "lucide-react";
 import { useCategories } from "@/hooks/Categories/useCategories";
 import { useSubcategories } from "@/hooks/Subcategories/useSubcategories";
-import { IProduct } from "@/types/productTypes";
-
-interface AddProductDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmitProduct: (product: IProduct) => void;
-  productToEdit?: IProduct;
-}
+import { IProductPayload, AddProductDialogProps, IProductVariant } from "@/types/productTypes";
+import Image from "next/image";
 
 export function AddProductDialog({
   isOpen,
@@ -46,7 +40,7 @@ export function AddProductDialog({
     watch,
     control,
     formState: { errors },
-  } = useForm<IProduct>({
+  } = useForm<IProductPayload>({
     defaultValues: {
       name: "",
       slug: "",
@@ -75,44 +69,58 @@ export function AddProductDialog({
   const { data: categories = [] } = useCategories();
   const selectedCategoryId = watch("category");
   const { data: subcategories = [] } = useSubcategories();
+  const [categorySearch, setCategorySearch] = useState("");
+  const [subcategorySearch, setSubcategorySearch] = useState("");
 
-  // Populate form for editing
+  // Populate form for editing (type-safe)
   useEffect(() => {
     if (productToEdit) {
-      Object.entries(productToEdit).forEach(([key, value]) => {
-        if (key === "_id" && !value) return;
-        setValue(key as any, value);
-      });
-      setUploadedImages(productToEdit.images || []);
+      setValue("name", productToEdit.name ?? "");
+      setValue("slug", productToEdit.slug ?? "");
+      setValue("price", productToEdit.price ?? 0);
+      setValue("description", productToEdit.description ?? "");
+      setValue("category", productToEdit.category ?? "");
+      setValue("subCategory", productToEdit.subCategory ?? "");
+      setValue("sizes", productToEdit.sizes ?? []);
+      setValue("colors", productToEdit.colors ?? []);
+      setValue("variants", productToEdit.variants ?? []);
+      setValue("material", productToEdit.material ?? "");
+      setValue("care", productToEdit.care ?? "");
+      setValue("delivery", productToEdit.delivery ?? "");
+      setValue("rating", productToEdit.rating ?? 0);
+      setValue("stock", productToEdit.stock ?? 0);
+      setValue("images", productToEdit.images ?? []);
+
+      setUploadedImages(productToEdit.images ?? []);
     } else {
       reset();
       setUploadedImages([]);
     }
   }, [productToEdit, setValue, reset, isOpen]);
 
-  // Main product images
-  // const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const files = e.target.files;
-  //   if (!files) return;
-  //   setIsUploading(true);
-  //   try {
-  //     const newUrls = await Promise.all(
-  //       Array.from(files).map(
-  //         (file) =>
-  //           new Promise<string>((resolve) =>
-  //             setTimeout(() => resolve(URL.createObjectURL(file)), 500)
-  //           )
-  //       )
-  //     );
-  //     const allImages = [...uploadedImages, ...newUrls];
-  //     setUploadedImages(allImages);
-  //     setValue("images", allImages);
-  //   } catch (error) {
-  //     console.error("Error uploading images:", error);
-  //   } finally {
-  //     setIsUploading(false);
-  //   }
-  // };
+  // Handle main product images
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    setIsUploading(true);
+    try {
+      const newUrls = await Promise.all(
+        Array.from(files).map(
+          (file) =>
+            new Promise<string>((resolve) =>
+              setTimeout(() => resolve(URL.createObjectURL(file)), 500)
+            )
+        )
+      );
+      const allImages = [...uploadedImages, ...newUrls];
+      setUploadedImages(allImages);
+      setValue("images", allImages);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const removeImage = (index: number) => {
     const newImages = uploadedImages.filter((_, i) => i !== index);
@@ -120,11 +128,12 @@ export function AddProductDialog({
     setValue("images", newImages);
   };
 
-  // Variant images
+  // Handle variant images
   const handleVariantImageChange = (index: number, files: FileList | null) => {
     if (!files) return;
     const newUrls = Array.from(files).map((file) => URL.createObjectURL(file));
-    const updatedVariants = [...watch("variants")];
+    const variants = watch("variants");
+    const updatedVariants = [...variants];
     updatedVariants[index].images = [...(updatedVariants[index].images || []), ...newUrls];
     setValue("variants", updatedVariants);
   };
@@ -140,22 +149,28 @@ export function AddProductDialog({
     }
   };
 
-  const onSubmit = (data: IProduct) => {
-    const sanitizedVariants = data.variants.map((v) => ({
+  const onSubmit = (data: IProductPayload) => {
+    const sanitizedVariants = data.variants.map((v: IProductVariant) => ({
       color: v.color,
       stock: v.stock,
       images: v.images || [],
       ...(v._id ? { _id: v._id } : {}),
     }));
 
-    const sanitizedData: IProduct = { ...data, variants: sanitizedVariants };
-    if (!productToEdit?._id) delete (sanitizedData as any)._id;
+    const sanitizedData: IProductPayload = {
+      ...data,
+      variants: sanitizedVariants,
+    };
+
+    // Remove _id if creating a new product
+    if (!data._id) delete sanitizedData._id;
 
     onSubmitProduct(sanitizedData);
     reset();
     setUploadedImages([]);
     onClose();
   };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -196,7 +211,7 @@ export function AddProductDialog({
             {errors.stock && <p className="text-red-500 text-xs">{errors.stock.message}</p>}
           </div>
 
-          {/* Category */}
+          {/* Category & Subcategory */}
           <div className="space-y-2">
             <Label>Category</Label>
             <Controller
@@ -204,18 +219,17 @@ export function AddProductDialog({
               control={control}
               rules={{ required: "Category required" }}
               render={({ field }) => {
-                const [search, setSearch] = useState("");
                 const filteredCategories = categories.filter((cat) =>
-                  cat.name.toLowerCase().includes(search.toLowerCase())
+                  cat.name.toLowerCase().includes(categorySearch.toLowerCase())
                 );
 
                 return (
                   <Select
+                    value={field.value}
                     onValueChange={(val) => {
                       field.onChange(val);
-                      setValue("subCategory", "");
+                      setValue("subCategory", ""); // reset subcategory
                     }}
-                    value={field.value}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Category" />
@@ -224,8 +238,8 @@ export function AddProductDialog({
                       <div className="p-2">
                         <Input
                           placeholder="Search category..."
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
+                          value={categorySearch}
+                          onChange={(e) => setCategorySearch(e.target.value)}
                           className="mb-2"
                         />
                         {filteredCategories.map((cat) => (
@@ -241,7 +255,6 @@ export function AddProductDialog({
             />
           </div>
 
-          {/* Subcategory */}
           <div className="space-y-2">
             <Label>Subcategory</Label>
             <Controller
@@ -249,37 +262,50 @@ export function AddProductDialog({
               control={control}
               rules={{ required: "Subcategory required" }}
               render={({ field }) => {
-                const [search, setSearch] = useState("");
-                const selectedCategoryName = categories.find(c => c._id === selectedCategoryId)?.name || "";
+
 
                 const filteredSubcategories = subcategories.filter(
-                  (sub) => sub.category === selectedCategoryName && sub.name.toLowerCase().includes(search.toLowerCase())
+                  (sub) =>
+                    sub.categoryId === selectedCategoryId &&
+                    sub.name?.toLowerCase().includes(subcategorySearch.toLowerCase())
                 );
+
 
                 return (
                   <Select
-                    onValueChange={field.onChange}
                     value={field.value}
+                    onValueChange={field.onChange}
                     disabled={!selectedCategoryId}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={selectedCategoryId ? "Select Subcategory" : "Select Category first"} />
+                      <SelectValue
+                        placeholder={
+                          selectedCategoryId
+                            ? "Select Subcategory"
+                            : "Select Category first"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <div className="p-2">
                         <Input
                           placeholder="Search subcategory..."
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
+                          value={subcategorySearch}
+                          onChange={(e) => setSubcategorySearch(e.target.value)}
                           className="mb-2"
                         />
                         {filteredSubcategories.map((sub) => (
-                          <SelectItem key={sub.id} value={sub.id}>
-                            {sub.name}
+                          <SelectItem
+                            key={sub._id ?? sub._id ?? Math.random().toString()} // fallback key if _id missing
+                            value={sub._id ?? sub._id ?? ""} // ensure value is always a string
+                          >
+                            {sub.name ?? "Unnamed Subcategory"}
                           </SelectItem>
                         ))}
                         {filteredSubcategories.length === 0 && (
-                          <p className="text-sm text-muted-foreground">No subcategories available</p>
+                          <p className="text-sm text-muted-foreground">
+                            No subcategories available
+                          </p>
                         )}
                       </div>
                     </SelectContent>
@@ -289,23 +315,10 @@ export function AddProductDialog({
             />
           </div>
 
-          {/* Material */}
-          <div className="space-y-2">
-            <Label>Material</Label>
-            <Input {...register("material")} />
-          </div>
-
-          {/* Care */}
-          <div className="space-y-2">
-            <Label>Care</Label>
-            <Input {...register("care")} />
-          </div>
-
-          {/* Delivery */}
-          <div className="space-y-2">
-            <Label>Delivery Info</Label>
-            <Input {...register("delivery")} />
-          </div>
+          {/* Material, Care, Delivery */}
+          <div className="space-y-2"><Label>Material</Label><Input {...register("material")} /></div>
+          <div className="space-y-2"><Label>Care</Label><Input {...register("care")} /></div>
+          <div className="space-y-2"><Label>Delivery Info</Label><Input {...register("delivery")} /></div>
 
           {/* Rating */}
           <div className="space-y-2">
@@ -313,24 +326,14 @@ export function AddProductDialog({
             <Input type="number" step="0.1" {...register("rating")} />
           </div>
 
-          {/* Sizes */}
+          {/* Sizes & Colors */}
           <div className="space-y-2 md:col-span-2">
             <Label>Sizes (comma separated)</Label>
-            <Input
-              {...register("sizes")}
-              placeholder="e.g., S,M,L,XL"
-              onChange={(e) => setValue("sizes", e.target.value.split(","))}
-            />
+            <Input {...register("sizes")} placeholder="e.g., S,M,L" onChange={(e) => setValue("sizes", e.target.value.split(","))} />
           </div>
-
-          {/* Colors */}
           <div className="space-y-2 md:col-span-2">
             <Label>Colors (comma separated)</Label>
-            <Input
-              {...register("colors")}
-              placeholder="e.g., Red,Blue,Black"
-              onChange={(e) => setValue("colors", e.target.value.split(","))}
-            />
+            <Input {...register("colors")} placeholder="e.g., Red,Blue" onChange={(e) => setValue("colors", e.target.value.split(","))} />
           </div>
 
           {/* Variants */}
@@ -363,7 +366,13 @@ export function AddProductDialog({
                     <div className="flex gap-2 mt-2">
                       {variant.images.map((url, i) => (
                         <div key={i} className="relative w-20 h-20">
-                          <img src={url} alt={`variant-${index}-${i}`} className="w-full h-full object-cover rounded" />
+                          <Image
+                            src={url}
+                            alt={`variant-${index}-${i}`}
+                            fill
+                            className="object-cover rounded"
+                            sizes="80px"
+                          />
                           <button
                             type="button"
                             onClick={() => {
@@ -393,41 +402,47 @@ export function AddProductDialog({
             <Textarea {...register("description")} />
           </div>
 
-          {/* Main Images
-          // <div className="space-y-2 md:col-span-2">
-          //   <Label>Images</Label>
-          //   <div className="flex items-center gap-3">
-          //     <label htmlFor="imageUpload" className="flex gap-1 cursor-pointer bg-primary text-primary-foreground px-4 py-2 rounded-lg">
-          //       <Upload size={16} />
-          //       {isUploading ? "Uploading..." : "Upload Images"}
-          //     </label>
-          //     <input
-          //       type="file"
-          //       id="imageUpload"
-          //       multiple
-          //       accept="image/*"
-          //       onChange={handleImageChange}
-          //       className="hidden"
-          //       disabled={isUploading}
-          //     />
-          //   </div>
-          //   {uploadedImages.length > 0 && (
-          //     <div className="grid grid-cols-3 gap-3 mt-2">
-          //       {uploadedImages.map((url, idx) => (
-          //         <div key={idx} className="relative">
-          //           <img src={url} alt={`preview-${idx}`} className="w-full h-28 object-cover rounded-lg" />
-          //           <button
-          //             type="button"
-          //             onClick={() => removeImage(idx)}
-          //             className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
-          //           >
-          //             <Trash2 size={12} />
-          //           </button>
-          //         </div>
-          //       ))}
-          //     </div>
-          //   )}
-          // </div> */}
+          {/* Main Images */}
+          <div className="space-y-2 md:col-span-2">
+            <Label>Images</Label>
+            <div className="flex items-center gap-3">
+              <label htmlFor="imageUpload" className="flex gap-1 cursor-pointer bg-primary text-primary-foreground px-4 py-2 rounded-lg">
+                <Upload size={16} />
+                {isUploading ? "Uploading..." : "Upload Images"}
+              </label>
+              <input
+                type="file"
+                id="imageUpload"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                disabled={isUploading}
+              />
+            </div>
+            {uploadedImages.length > 0 && (
+              <div className="grid grid-cols-3 gap-3 mt-2">
+                {uploadedImages.map((url, idx) => (
+                  <div key={idx} className="relative w-full h-28">
+                    <Image
+                      src={url}
+                      alt={`preview-${idx}`}
+                      fill
+                      className="object-cover rounded-lg"
+                      sizes="100vw"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Actions */}
           <DialogFooter className="mt-4 flex justify-end gap-3 md:col-span-2">

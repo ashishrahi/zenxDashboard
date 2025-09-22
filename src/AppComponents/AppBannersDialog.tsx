@@ -41,7 +41,6 @@ export function AddBannerDialog({
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<IBannerPayload>({
     defaultValues: {

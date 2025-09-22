@@ -1,8 +1,10 @@
+import { ICategoryPayload } from "./categoriesTypes";
+
 export interface IProductVariant {
-  id?: string;
-  color?: string;
-  images?: string[];
-  stock?: number;
+  _id?: string;        // optional variant ID
+  color: string;
+  images: string[];
+  stock: number;
 }
 
 export interface Product {
@@ -23,4 +25,32 @@ export interface Product {
   stock?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface IProductPayload {
+  _id?: string;
+  name: string;
+  slug: string;
+  price: number;
+  colors: string[];
+  variants: IProductVariant[];
+  sizes: string[];
+  category: string;
+  subCategory: string;
+  description?: string;
+  material?: string;
+  care?: string;
+  delivery?: string;
+  rating?: number;
+  stock: number;
+  images: string[];         // fixed type from empty array to string[]
+  createdAt?: string;
+}
+
+export interface AddProductDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmitProduct: (product: IProductPayload) => void;
+  productToEdit?: IProductPayload;
+  categories: ICategoryPayload[];
 }

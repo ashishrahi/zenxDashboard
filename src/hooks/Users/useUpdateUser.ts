@@ -6,9 +6,10 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation<IUser, Error, IUser>({
-    mutationFn: (updatedUser: IUser) => UserService.update(updatedUser.id, updatedUser),
+    mutationFn: (updatedUser: IUser) => UserService.update(updatedUser),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 };
+

@@ -7,7 +7,7 @@ export const useUpdateCountry = () => {
 
   return useMutation<ICountry, Error, ICountry>({
     mutationFn: (updatedCountry: ICountry) =>
-      CountryService.update(updatedCountry.id!, updatedCountry),
+      CountryService.update(updatedCountry._id!, updatedCountry),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["countries"] });
     },

@@ -22,14 +22,9 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { AppButton } from "./AppButton";
+import { ICategoryPayload } from "@/types/categoriesTypes";
+import Image from "next/image";
 
-export interface ICategoryPayload {
-  _id?: string;
-  name: string;
-  slug: string;
-  description?: string;
-  images: string[];
-}
 
 interface AddCategoryDialogProps {
   isOpen: boolean;
@@ -229,9 +224,8 @@ export function AddCategoryDialog({
             <div className="flex items-center gap-3">
               <label
                 htmlFor="imageUpload"
-                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${
-                  isUploading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
+                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${isUploading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
               >
                 <Upload size={16} />
                 {isUploading ? "Uploading..." : "Upload Images"}
@@ -264,11 +258,14 @@ export function AddCategoryDialog({
                     key={idx}
                     className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
                   >
-                    <img
+                    <Image
                       src={url}
                       alt={`preview-${idx}`}
+                      width={200} // adjust based on your design
+                      height={112} // adjust based on your design
                       className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
                     />
+
                     <AppButton
                       type="button"
                       onClick={() => removeImage(idx)}

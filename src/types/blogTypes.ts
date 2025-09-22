@@ -1,8 +1,12 @@
 export interface IBlog {
-  category?: string;
-  title?: string;
+  _id: string;
+  title: string;
+  category: string;
+  content: string;
+  publishedDate: string;
+  author: string; // add this
   description?: string;
   link?: string;
-  image?: string; 
+  image?: string;
   tags?: string[];
 }

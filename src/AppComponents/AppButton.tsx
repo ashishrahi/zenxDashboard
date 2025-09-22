@@ -1,18 +1,25 @@
 // AppButton.tsx
-import React from "react";
-import { Button } from "@/components/ui/button"; // assuming you're wrapping your UI button
+import React, { ButtonHTMLAttributes } from "react";
 
-interface AppButtonProps {
-  onClick: () => void;
-  className?: string;
+interface AppButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
+  variant?: "outline" | "primary" | "secondary"; // example
+  className?: string;
 }
 
-export const AppButton: React.FC<AppButtonProps> = ({ onClick, className = "", children }) => {
+export const AppButton: React.FC<AppButtonProps> = ({
+  children,
+  className,
+  variant,
+  ...props
+}) => {
+  const variantClass = variant === "outline" ? "border" : "bg-blue-600 text-white";
   return (
-    <Button onClick={onClick} className={className}>
+    <button
+      className={`${variantClass} ${className}`}
+      {...props} // this now includes 'type', 'onClick', etc.
+    >
       {children}
-    </Button>
+    </button>
   );
 };
-

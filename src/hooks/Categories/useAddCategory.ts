@@ -1,12 +1,12 @@
 "use client"
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CategoryService } from "@/services/categoryService";
-import { ICategory } from "@/types/categoriesTypes";
+import { ICategoryPayload } from "@/types/categoriesTypes";
 
 export const useAddCategory = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<ICategory, Error, Omit<ICategory, "id">>({
+  return useMutation<ICategoryPayload, Error, Omit<ICategoryPayload, "id">>({
     mutationFn: (newCategory) => CategoryService.create(newCategory),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
