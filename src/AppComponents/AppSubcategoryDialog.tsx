@@ -22,6 +22,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { AppButton } from "./AppButton";
+import Image from "next/image";
 
 export interface ISubcategoryPayload {
   _id?: string;
@@ -294,29 +295,33 @@ export function AddSubcategoryDialog({
               </div>
             )}
 
-            {uploadedImages.length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-2">
-                {uploadedImages.map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
-                  >
-                    <img
-                      src={url}
-                      alt={`preview-${idx}`}
-                      className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
-                    />
-                    <AppButton
-                      type="button"
-                      onClick={() => removeImage(idx)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-70 group-hover:opacity-100 transition"
-                    >
-                      <Trash2 size={12} />
-                    </AppButton>
-                  </div>
-                ))}
-              </div>
-            )}
+           {uploadedImages.length > 0 && (
+  <div className="grid grid-cols-3 gap-3 mt-2">
+    {uploadedImages.map((url, idx) => (
+      <div
+        key={idx}
+        className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
+      >
+        <div className="w-full h-28 relative rounded-lg transition-transform group-hover:scale-105">
+          <Image
+            src={url}
+            alt={`preview-${idx}`}
+            fill
+            style={{ objectFit: "cover", borderRadius: "0.5rem" }}
+            sizes="(max-width: 768px) 100vw, 128px"
+          />
+        </div>
+        <AppButton
+          type="button"
+          onClick={() => removeImage(idx)}
+          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-70 group-hover:opacity-100 transition"
+        >
+          <Trash2 size={12} />
+        </AppButton>
+      </div>
+    ))}
+  </div>
+)}
           </div>
 
           {/* Action Buttons */}

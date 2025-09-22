@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Upload, Trash2, XCircle, Image as ImageIcon, Edit3 } from "lucide-react";
 import { AppButton } from "./AppButton";
+import Image from "next/image";
 
 export interface IBannerPayload {
   _id?: string;
@@ -176,17 +177,24 @@ export function AddBannerDialog({
             </div>
 
             {uploadedImage && (
-              <div className="relative mt-2 w-32 h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
-                <img src={uploadedImage} alt="banner preview" className="w-full h-full object-cover" />
-                <AppButton
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-70 hover:opacity-100 transition"
-                >
-                  <Trash2 size={12} />
-                </AppButton>
-              </div>
-            )}
+  <div className="relative mt-2 w-32 h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+    <Image
+      src={uploadedImage}
+      alt="banner preview"
+      fill
+      style={{ objectFit: "cover" }}
+      priority={false} // set true if you want preloading
+      sizes="128px" // optional for better optimization
+    />
+    <AppButton
+      type="button"
+      onClick={removeImage}
+      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-70 hover:opacity-100 transition"
+    >
+      <Trash2 size={12} />
+    </AppButton>
+  </div>
+)}
           </div>
 
           {/* Action Buttons */}

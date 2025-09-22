@@ -1,4 +1,3 @@
-import Trunk1 from '../assets/1banner.webp'
 import Trunk2 from '../assets/2banner.webp'
 import Trunk3 from '../assets/3banner.webp'
 

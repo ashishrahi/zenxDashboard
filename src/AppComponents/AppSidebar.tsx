@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Folder, ChevronDown, Search, X, Users, BoxesIcon } from "lucide-react";
+import { ChevronDown, Search, X, Users, BoxesIcon } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import Link from "next/link";
 import clsx from "clsx";
