@@ -1,25 +1,35 @@
 // AppButton.tsx
-import React, { ButtonHTMLAttributes } from "react";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
 
-interface AppButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+type CustomVariant = "primary" | "secondary" | "outline";
+
+interface AppButtonProps extends Omit<React.ComponentProps<typeof Button>, "variant"> {
   children: React.ReactNode;
-  variant?: "outline" | "primary" | "secondary"; // example
+  variant?: CustomVariant;
   className?: string;
 }
 
+// Map custom variants to shadcn variants
+const variantMap: Record<CustomVariant, NonNullable<React.ComponentProps<typeof Button>["variant"]>> = {
+  primary: "default",       // 'primary' maps to shadcn 'default'
+  secondary: "secondary",
+  outline: "outline",
+};
+
 export const AppButton: React.FC<AppButtonProps> = ({
   children,
-  className,
-  variant,
+  variant = "primary",
+  className = "",
   ...props
 }) => {
-  const variantClass = variant === "outline" ? "border" : "bg-blue-600 text-white";
   return (
-    <button
-      className={`${variantClass} ${className}`}
-      {...props} // this now includes 'type', 'onClick', etc.
+    <Button
+      variant={variantMap[variant]} // Type-safe mapping
+      className={className}
+      {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 };
