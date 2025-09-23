@@ -22,35 +22,29 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { AppButton } from "./AppButton";
-
-export interface ISubcategoryPayload {
-  _id?: string;
-  name: string;
-  slug: string;
-  description?: string;
-  categoryId: string;
-}
+import { ISubcategoryPayload } from "@/types/subcategoryTypes";
+import { SubcategoryService } from "@/services/subcategoryService";
 
 interface AddSubcategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmitSubcategory: (formData: FormData) => void;
   subcategoryToEdit?: ISubcategoryPayload & { images?: string[] };
   categories: { _id: string; name: string }[];
+  onSubcategorySaved?: () => void;
 }
 
 export function AddSubcategoryDialog({
   isOpen,
   onClose,
-  onSubmitSubcategory,
   subcategoryToEdit,
   categories,
+  onSubcategorySaved,
 }: AddSubcategoryDialogProps) {
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
+    reset,
     watch,
     formState: { errors },
   } = useForm<ISubcategoryPayload>({
@@ -67,67 +61,104 @@ export function AddSubcategoryDialog({
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Watch all form values
+  const formValues = watch();
+
+  // Populate form when editing - SIMPLIFIED FIX
   useEffect(() => {
-    if (subcategoryToEdit) {
-      setValue("_id", subcategoryToEdit._id ?? "");
-      setValue("name", subcategoryToEdit.name ?? "");
-      setValue("slug", subcategoryToEdit.slug ?? "");
-      setValue("description", subcategoryToEdit.description ?? "");
-      setValue("categoryId", subcategoryToEdit.categoryId ?? "");
-      setUploadedImages(subcategoryToEdit.images ?? []);
-      setUploadedFiles([]);
-    } else {
-      reset();
-      setUploadedImages([]);
+    if (isOpen) {
+      if (subcategoryToEdit) {
+        // Set all values at once for editing
+        reset({
+          _id: subcategoryToEdit._id || "",
+          name: subcategoryToEdit.name || "",
+          slug: subcategoryToEdit.slug || "",
+          description: subcategoryToEdit.description || "",
+          categoryId: subcategoryToEdit.categoryId || "",
+        });
+        setUploadedImages(subcategoryToEdit.images || []);
+      } else {
+        // Reset for new subcategory
+        reset({
+          _id: "",
+          name: "",
+          slug: "",
+          description: "",
+          categoryId: "",
+        });
+        setUploadedImages([]);
+      }
       setUploadedFiles([]);
     }
-  }, [subcategoryToEdit, setValue, reset, isOpen]);
+  }, [subcategoryToEdit, isOpen, reset]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    setIsUploading(true);
-    const fileArray = Array.from(files);
-    const previewUrls = fileArray.map((file) => URL.createObjectURL(file));
-
-    setUploadedFiles((prev) => [...prev, ...fileArray]);
-    setUploadedImages((prev) => [...prev, ...previewUrls]);
-    setIsUploading(false);
-  };
-
-  const removeImage = (index: number) => {
-    if (index >= uploadedImages.length - uploadedFiles.length) {
-      const fileIndex = index - (uploadedImages.length - uploadedFiles.length);
-      setUploadedFiles((prev) => prev.filter((_, i) => i !== fileIndex));
-    }
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
+  // Generate slug from name
   const generateSlugFromName = (name: string) =>
     name?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ?? "";
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
     setValue("name", name);
-    if (!subcategoryToEdit?.slug || watch("slug") === generateSlugFromName(subcategoryToEdit.name ?? "")) {
+
+    // Only auto-generate slug if we're creating new or if the slug matches the auto-generated pattern
+    if (!subcategoryToEdit || formValues.slug === generateSlugFromName(subcategoryToEdit.name || "")) {
       setValue("slug", generateSlugFromName(name));
     }
   };
 
-  const onSubmit = (data: ISubcategoryPayload) => {
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("slug", data.slug);
-    if (data.description) formData.append("description", data.description);
-    formData.append("categoryId", data.categoryId);
-    uploadedFiles.forEach((file) => formData.append("images", file));
-    onSubmitSubcategory(formData);
+  // Handle image upload
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
 
-    reset();
-    setUploadedImages([]);
-    setUploadedFiles([]);
-    onClose();
+    setIsUploading(true);
+    const filesArray = Array.from(files);
+    const previewUrls = filesArray.map((file) => URL.createObjectURL(file));
+
+    setUploadedFiles((prev) => [...prev, ...filesArray]);
+    setUploadedImages((prev) => [...prev, ...previewUrls]);
+    setIsUploading(false);
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    const existingLength = subcategoryToEdit?.images?.length ?? 0;
+    if (index >= existingLength) {
+      const fileIndex = index - existingLength;
+      setUploadedFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+    }
+  };
+
+  const onSubmit = async (data: ISubcategoryPayload) => {
+    if (!data.name || !data.slug || !data.categoryId) {
+      alert("Please fill all required fields");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      if (subcategoryToEdit?._id) {
+        await SubcategoryService.update({
+          ...data,
+          images: uploadedFiles,
+        });
+      } else {
+        await SubcategoryService.create({
+          ...data,
+          images: uploadedFiles,
+        });
+      }
+
+      reset();
+      setUploadedImages([]);
+      setUploadedFiles([]);
+      onClose();
+      onSubcategorySaved?.();
+    } catch (err) {
+      console.error("Error saving subcategory:", err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -150,30 +181,34 @@ export function AddSubcategoryDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <input type="hidden" {...register("_id")} />
 
-          {/* Category */}
+          {/* Category - FIXED VERSION */}
           <div className="space-y-2">
             <Label htmlFor="categoryId" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Category
+              Category *
             </Label>
             <select
               id="categoryId"
               {...register("categoryId", { required: "Category is required" })}
+              value={formValues.categoryId || ""}
+              onChange={(e) => setValue("categoryId", e.target.value)}
               className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             >
               <option value="">Select a category</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.name}
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat.name}
                 </option>
               ))}
             </select>
-            {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
+            {errors.categoryId && (
+              <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>
+            )}
           </div>
 
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Subcategory Name
+              Subcategory Name *
             </Label>
             <div className="relative">
               <Input
@@ -182,6 +217,7 @@ export function AddSubcategoryDialog({
                   required: "Subcategory name is required",
                   minLength: { value: 2, message: "Name must be at least 2 characters" },
                 })}
+                value={formValues.name || ""}
                 onChange={handleNameChange}
                 placeholder="e.g., Men's Clothing"
                 className="pr-10 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
@@ -196,7 +232,7 @@ export function AddSubcategoryDialog({
           {/* Slug */}
           <div className="space-y-2">
             <Label htmlFor="slug" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              URL Slug
+              URL Slug *
             </Label>
             <div className="relative">
               <Input
@@ -208,6 +244,8 @@ export function AddSubcategoryDialog({
                     message: "Slug can only contain lowercase letters, numbers, and hyphens",
                   },
                 })}
+                value={formValues.slug || ""}
+                onChange={(e) => setValue("slug", e.target.value)}
                 placeholder="e.g., mens-clothing"
                 className="pr-10 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               />
@@ -227,6 +265,8 @@ export function AddSubcategoryDialog({
               <Textarea
                 id="description"
                 {...register("description")}
+                value={formValues.description || ""}
+                onChange={(e) => setValue("description", e.target.value)}
                 placeholder="Describe this subcategory..."
                 className="pr-10 pt-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none h-24"
               />
@@ -285,7 +325,12 @@ export function AddSubcategoryDialog({
 
           {/* Action Buttons */}
           <DialogFooter className="mt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4 md:col-span-2 sticky bottom-0 bg-white dark:bg-gray-900 z-10">
-            <AppButton variant="outline" type="button" className="flex items-center gap-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={onClose}>
+            <AppButton
+              variant="outline"
+              type="button"
+              className="flex items-center gap-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={onClose}
+            >
               <XCircle size={16} /> Cancel
             </AppButton>
             <AppButton type="submit" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700" disabled={isUploading}>

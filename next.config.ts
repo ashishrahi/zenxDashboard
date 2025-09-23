@@ -6,6 +6,15 @@ const nextConfig = {
   serverActions: {
     bodySizeLimit: "10mb", // increase limit as needed
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**", // allow all Cloudinary paths
+      },
+    ],
+  },
 };
 
 module.exports = nextConfig;

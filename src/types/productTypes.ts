@@ -8,7 +8,7 @@ export interface IProductVariant {
 }
 
 export interface Product {
-  id?: string;
+  _id?: string;
   name?: string;
   slug?: string;
   price?: number;
@@ -28,12 +28,12 @@ export interface Product {
 }
 
 export interface IProductPayload {
-  _id: string;
+  _id:string;
   name: string;
   slug: string;
   price: number;
   colors: string[];
-  variants: IProductVariant[];
+  variants: IProductVariant[];   // keep as is
   sizes: string[];
   categoryId: string;
   subcategoryId: string;
@@ -43,9 +43,9 @@ export interface IProductPayload {
   delivery?: string;
   rating?: number;
   stock: number;
-  images: string[];         // fixed type from empty array to string[]
-  createdAt?: string;
+  images?: File[];              // <-- File[] for upload
 }
+
 
 export interface AddProductDialogProps {
   isOpen: boolean;

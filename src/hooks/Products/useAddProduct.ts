@@ -5,8 +5,9 @@ import { IProductPayload } from "@/types/productTypes";
 export const useAddProduct = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<IProductPayload, Error, Omit<IProductPayload, "id">>({
-    mutationFn: (newProduct) => ProductService.create(newProduct),
+  return useMutation({
+    mutationFn: (newProduct: Omit<IProductPayload, "_id"> & { variantFiles?: File[][] }) => 
+      ProductService.create(newProduct),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
     },

@@ -16,8 +16,10 @@ export const ProductService = {
     return data?.data;
   },
 
-  // Create a new product (supports image files)
-  create: async (product: Omit<IProductPayload, "_id" | "images"> & { images?: File[] }) => {
+  // Create a new product (supports variant images)
+  create: async (product: Omit<IProductPayload, "_id"> & { 
+    variantFiles?: File[][]; // Array of File arrays for each variant
+  }) => {
     const formData = new FormData();
 
     // Required fields
@@ -32,14 +34,25 @@ export const ProductService = {
     formData.append("material", product.material ?? "");
     formData.append("care", product.care ?? "");
     formData.append("delivery", product.delivery ?? "");
+    formData.append("stock", product.stock?.toString() ?? "0");
+    formData.append("rating", product.rating?.toString() ?? "0");
 
     // Arrays
-    formData.append("variants", JSON.stringify(product.variants ?? []));
+    formData.append("variants", JSON.stringify(product.variants?.map(variant => ({
+      color: variant.color,
+      stock: variant.stock,
+      // Don't send image URLs to backend, backend will handle file uploads
+    })) ?? []));
+    
     formData.append("sizes", JSON.stringify(product.sizes ?? []));
     formData.append("colors", JSON.stringify(product.colors ?? []));
 
-    // Images
-    product.images?.forEach((file) => formData.append("images", file));
+    // Variant Images - append each file with proper naming
+    product.variantFiles?.forEach((files, variantIndex) => {
+      files.forEach((file, fileIndex) => {
+        formData.append(`variantImages[${variantIndex}]`, file);
+      });
+    });
 
     const { data } = await axiosInstance.post("/products/create", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -48,8 +61,10 @@ export const ProductService = {
     return data?.data;
   },
 
-  // Update an existing product (supports image files)
-  update: async (product: IProductPayload & { images?: File[] }) => {
+  // Update an existing product (supports variant images)
+  update: async (product: IProductPayload & { 
+    variantFiles?: File[][]; // Array of File arrays for each variant
+  }) => {
     const formData = new FormData();
 
     // Required fields
@@ -64,14 +79,25 @@ export const ProductService = {
     formData.append("material", product.material ?? "");
     formData.append("care", product.care ?? "");
     formData.append("delivery", product.delivery ?? "");
+    formData.append("stock", product.stock?.toString() ?? "0");
+    formData.append("rating", product.rating?.toString() ?? "0");
 
     // Arrays
-    formData.append("variants", JSON.stringify(product.variants ?? []));
+    formData.append("variants", JSON.stringify(product.variants?.map(variant => ({
+      color: variant.color,
+      stock: variant.stock,
+      // Don't send image URLs to backend for existing images
+    })) ?? []));
+    
     formData.append("sizes", JSON.stringify(product.sizes ?? []));
     formData.append("colors", JSON.stringify(product.colors ?? []));
 
-    // Images
-    product.images?.forEach((file) => formData.append("images", file));
+    // Variant Images - append each file with proper naming
+    product.variantFiles?.forEach((files, variantIndex) => {
+      files.forEach((file, fileIndex) => {
+        formData.append(`variantImages[${variantIndex}]`, file);
+      });
+    });
 
     const { data } = await axiosInstance.put(`/products/update/${product._id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
