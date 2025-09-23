@@ -24,6 +24,7 @@ import {
 import { AppButton } from "./AppButton";
 import { ICategoryPayload } from "@/types/categoriesTypes";
 import { CategoryService } from "@/services/categoryService";
+import Image from "next/image";
 
 interface AddCategoryDialogProps {
   isOpen: boolean;
@@ -266,9 +267,11 @@ export function AddCategoryDialog({
                     key={idx}
                     className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
                   >
-                    <img
+                    <Image
                       src={url}
                       alt={`preview-${idx}`}
+                      width={200}
+                      height={200}
                       className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
                     />
                     <AppButton

@@ -35,7 +35,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
         {/* Logo / Top */}
         <div className="flex items-center justify-center p-4 border-b border-gray-800 relative">
           {!isCollapsed && (
-            <h1 className="font-bold text-xl text-red-600 tracking-wide">GlobalDocs</h1>
+            <h1 className="font-bold text-xl text-red-600 tracking-wide">Genric</h1>
           )}
 
           {/* Close button for mobile */}
@@ -84,7 +84,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             isCollapsed={isCollapsed}
             items={[
               { name: "User", href: "/users" },
-              { name: "Active User", href: "/users" },
+              // { name: "Active User", href: "/users" },
             ]}
           />
 
@@ -94,7 +94,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             isCollapsed={isCollapsed}
             items={[
               { name: "Banners", href: "/banners" },
-              { name: "Active", href: "/active" },
+              // { name: "Active", href: "/active" },
             ]}
           />
 
@@ -104,7 +104,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             isCollapsed={isCollapsed}
             items={[
               { name: "Categories", href: "/categories" },
-              { name: "Active", href: "/active" },
+              // { name: "Active", href: "/active" },
             ]}
           />
 
@@ -114,7 +114,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             isCollapsed={isCollapsed}
             items={[
               { name: "Subcategory", href: "/subcategories" },
-              { name: "Active", href: "/active" },
+              // { name: "Active", href: "/active" },
             ]}
           />
 
@@ -124,7 +124,38 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             isCollapsed={isCollapsed}
             items={[
               { name: "Products", href: "/products" },
-              { name: "Active", href: "/active" },
+              // { name: "Active", href: "/active" },
+            ]}
+          />
+
+          
+          <SidebarSection
+            title="ORDERS"
+            icon={<BoxesIcon className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
+            items={[
+              { name: "Orders", href: "/orders" },
+              // { name: "Active", href: "/active" },
+            ]}
+          />
+
+           <SidebarSection
+            title="CONTACTS"
+            icon={<BoxesIcon className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
+            items={[
+              { name: "Contacts", href: "/contacts" },
+              // { name: "Active", href: "/active" },
+            ]}
+          />
+
+           <SidebarSection
+            title="EXPORTS"
+            icon={<BoxesIcon className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
+            items={[
+              { name: "Export", href: "/exports" },
+              // { name: "Active", href: "/active" },
             ]}
           />
         </nav>
@@ -179,7 +210,7 @@ function SidebarSection({
                 href={item.href}
                 className={clsx(
                   "block py-1 text-sm text-gray-300 rounded hover:bg-[#2a2a2a] hover:text-white transition-colors",
-                  isCollapsed ? "text-center px-0" : "px-6"
+                  isCollapsed ? "text-center px-0" : "px-10"
                 )}
               >
                 {isCollapsed ? "•" : item.name}

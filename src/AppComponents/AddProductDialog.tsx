@@ -72,6 +72,7 @@ export function AddProductDialog({
   // Populate form when editing
   useEffect(() => {
     if (productToEdit) {
+      // Populate all fields
       (Object.keys(productToEdit) as (keyof IProductPayload)[]).forEach((key) => {
         const value = productToEdit[key];
         if (value !== undefined) setValue(key, value);
@@ -80,9 +81,20 @@ export function AddProductDialog({
       setValue("categoryId", productToEdit.categoryId || "");
       setValue("subcategoryId", productToEdit.subcategoryId || "");
 
-      // Initialize variantFiles array with empty arrays for each variant
-      const filesInit = productToEdit.variants?.map(() => []) || [];
+      // Ensure variants include images
+      const variantsWithImages = productToEdit.variants?.map((v) => ({
+        ...v,
+        images: v.images || [],
+      })) || [];
+      setValue("variants", variantsWithImages);
+
+      // Initialize variantFiles as empty arrays
+      const filesInit = variantsWithImages.map(() => []);
       setVariantFiles(filesInit);
+
+      // Populate colors from variants
+      const variantColors = variantsWithImages.map((v) => v.color?.trim()).filter(Boolean);
+      setValue("colors", Array.from(new Set(variantColors)));
     } else {
       reset();
       setVariantFiles([]);
@@ -102,10 +114,10 @@ export function AddProductDialog({
     }
   };
 
-  // Sync colors from variants
+  // Sync colors from variants on change
   const variants = watch("variants");
   useEffect(() => {
-    const variantColors = variants.map(v => v.color?.trim()).filter(Boolean);
+    const variantColors = variants.map((v) => v.color?.trim()).filter(Boolean);
     setValue("colors", Array.from(new Set(variantColors)));
   }, [variants, setValue]);
 
@@ -114,15 +126,18 @@ export function AddProductDialog({
     if (!files) return;
 
     // Create blob URLs for preview
-    const blobUrls = Array.from(files).map(file => URL.createObjectURL(file));
-    
+    const blobUrls = Array.from(files).map((file) => URL.createObjectURL(file));
+
     // Update variant images for preview
     const updatedVariants = [...watch("variants")];
-    updatedVariants[variantIndex].images = [...(updatedVariants[variantIndex].images || []), ...blobUrls];
+    updatedVariants[variantIndex].images = [
+      ...(updatedVariants[variantIndex].images || []),
+      ...blobUrls,
+    ];
     setValue("variants", updatedVariants);
 
     // Update the actual files array
-    setVariantFiles(prev => {
+    setVariantFiles((prev) => {
       const copy = [...prev];
       copy[variantIndex] = [...(copy[variantIndex] || []), ...Array.from(files)];
       return copy;
@@ -133,11 +148,13 @@ export function AddProductDialog({
   const removeVariantImage = (variantIndex: number, imageIndex: number) => {
     // Remove from preview
     const updatedVariants = [...watch("variants")];
-    updatedVariants[variantIndex].images = updatedVariants[variantIndex].images.filter((_, imgIdx) => imgIdx !== imageIndex);
+    updatedVariants[variantIndex].images = updatedVariants[variantIndex].images.filter(
+      (_, imgIdx) => imgIdx !== imageIndex
+    );
     setValue("variants", updatedVariants);
 
     // Remove from files array
-    setVariantFiles(prev => {
+    setVariantFiles((prev) => {
       const copy = [...prev];
       copy[variantIndex] = copy[variantIndex]?.filter((_, imgIdx) => imgIdx !== imageIndex) || [];
       return copy;
@@ -166,13 +183,13 @@ export function AddProductDialog({
   // Add new variant
   const handleAddVariant = () => {
     appendVariant({ color: "", stock: 0, images: [] });
-    setVariantFiles(prev => [...prev, []]);
+    setVariantFiles((prev) => [...prev, []]);
   };
 
   // Remove variant
   const handleRemoveVariant = (index: number) => {
     removeVariant(index);
-    setVariantFiles(prev => {
+    setVariantFiles((prev) => {
       const copy = [...prev];
       copy.splice(index, 1);
       return copy;
@@ -193,10 +210,7 @@ export function AddProductDialog({
           {/* Name */}
           <div className="space-y-2">
             <Label>Product Name *</Label>
-            <Input 
-              {...register("name", { required: "Product name required" })} 
-              onChange={handleNameChange} 
-            />
+            <Input {...register("name", { required: "Product name required" })} onChange={handleNameChange} />
             {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
           </div>
 
@@ -210,13 +224,13 @@ export function AddProductDialog({
           {/* Price */}
           <div className="space-y-2">
             <Label>Price *</Label>
-            <Input 
-              type="number" 
+            <Input
+              type="number"
               step="0.01"
-              {...register("price", { 
+              {...register("price", {
                 required: "Price required",
-                min: { value: 0, message: "Price must be positive" }
-              })} 
+                min: { value: 0, message: "Price must be positive" },
+              })}
             />
             {errors.price && <p className="text-red-500 text-xs">{errors.price.message}</p>}
           </div>
@@ -224,12 +238,12 @@ export function AddProductDialog({
           {/* Stock */}
           <div className="space-y-2">
             <Label>Total Stock *</Label>
-            <Input 
-              type="number" 
-              {...register("stock", { 
+            <Input
+              type="number"
+              {...register("stock", {
                 required: "Stock required",
-                min: { value: 0, message: "Stock must be positive" }
-              })} 
+                min: { value: 0, message: "Stock must be positive" },
+              })}
             />
             {errors.stock && <p className="text-red-500 text-xs">{errors.stock.message}</p>}
           </div>
@@ -339,13 +353,7 @@ export function AddProductDialog({
           {/* Rating */}
           <div className="space-y-2">
             <Label>Rating</Label>
-            <Input 
-              type="number" 
-              step="0.1" 
-              min="0" 
-              max="5" 
-              {...register("rating")} 
-            />
+            <Input type="number" step="0.1" min="0" max="5" {...register("rating")} />
           </div>
 
           {/* Sizes & Colors */}
@@ -354,7 +362,9 @@ export function AddProductDialog({
             <Input
               placeholder="e.g., S,M,L"
               value={watch("sizes").join(",")}
-              onChange={(e) => setValue("sizes", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+              onChange={(e) =>
+                setValue("sizes", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))
+              }
             />
           </div>
           <div className="space-y-2 md:col-span-2">
@@ -362,7 +372,9 @@ export function AddProductDialog({
             <Input
               placeholder="e.g., Red,Blue"
               value={watch("colors").join(",")}
-              onChange={(e) => setValue("colors", e.target.value.split(",").map(c => c.trim()).filter(Boolean))}
+              onChange={(e) =>
+                setValue("colors", e.target.value.split(",").map((c) => c.trim()).filter(Boolean))
+              }
             />
           </div>
 
@@ -374,16 +386,16 @@ export function AddProductDialog({
                 <Plus size={16} /> Add Variant
               </Button>
             </div>
-            
+
             {variantFields.map((variant, index) => (
               <div key={variant.id} className="border p-4 rounded-lg space-y-3">
                 <div className="flex gap-3 items-start">
                   {/* Variant Color */}
                   <div className="flex-1 space-y-2">
                     <Label>Color *</Label>
-                    <Input 
-                      {...register(`variants.${index}.color`, { required: "Variant color required" })} 
-                      placeholder="e.g., Red, Blue, Black" 
+                    <Input
+                      {...register(`variants.${index}.color`, { required: "Variant color required" })}
+                      placeholder="e.g., Red, Blue, Black"
                     />
                     {errors.variants?.[index]?.color && (
                       <p className="text-red-500 text-xs">{errors.variants[index]?.color?.message}</p>
@@ -393,13 +405,13 @@ export function AddProductDialog({
                   {/* Variant Stock */}
                   <div className="flex-1 space-y-2">
                     <Label>Stock *</Label>
-                    <Input 
-                      type="number" 
-                      {...register(`variants.${index}.stock`, { 
+                    <Input
+                      type="number"
+                      {...register(`variants.${index}.stock`, {
                         required: "Variant stock required",
-                        min: { value: 0, message: "Stock must be positive" }
-                      })} 
-                      placeholder="0" 
+                        min: { value: 0, message: "Stock must be positive" },
+                      })}
+                      placeholder="0"
                     />
                     {errors.variants?.[index]?.stock && (
                       <p className="text-red-500 text-xs">{errors.variants[index]?.stock?.message}</p>
@@ -407,9 +419,9 @@ export function AddProductDialog({
                   </div>
 
                   {/* Remove Variant Button */}
-                  <Button 
-                    type="button" 
-                    variant="destructive" 
+                  <Button
+                    type="button"
+                    variant="destructive"
                     onClick={() => handleRemoveVariant(index)}
                     className="mt-6"
                   >
@@ -421,8 +433,8 @@ export function AddProductDialog({
                 <div className="space-y-2">
                   <Label>Variant Images</Label>
                   <div className="flex items-center gap-3">
-                    <label 
-                      htmlFor={`variantUpload-${index}`} 
+                    <label
+                      htmlFor={`variantUpload-${index}`}
                       className="cursor-pointer bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white text-sm font-medium"
                     >
                       Upload Images
@@ -431,7 +443,7 @@ export function AddProductDialog({
                       {variantFiles[index]?.length || 0} files selected
                     </span>
                   </div>
-                  
+
                   <input
                     id={`variantUpload-${index}`}
                     type="file"
@@ -440,18 +452,13 @@ export function AddProductDialog({
                     className="hidden"
                     onChange={(e) => handleVariantImageUpload(index, e.target.files!)}
                   />
-                  
+
                   {/* Image Previews */}
                   {watch("variants")[index]?.images?.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {watch("variants")[index].images.map((url: string, imageIndex: number) => (
                         <div key={imageIndex} className="relative w-20 h-20 border rounded overflow-hidden">
-                          <Image 
-                            src={url} 
-                            alt={`variant-${index}-${imageIndex}`} 
-                            fill 
-                            className="object-cover" 
-                          />
+                          <Image src={url} alt={`variant-${index}-${imageIndex}`} fill className="object-cover" />
                           <button
                             type="button"
                             onClick={() => removeVariantImage(index, imageIndex)}
@@ -471,11 +478,7 @@ export function AddProductDialog({
           {/* Description */}
           <div className="space-y-2 md:col-span-2">
             <Label>Description</Label>
-            <Textarea 
-              {...register("description")} 
-              placeholder="Enter product description..."
-              rows={4}
-            />
+            <Textarea {...register("description")} placeholder="Enter product description..." rows={4} />
           </div>
 
           {/* Actions */}
