@@ -1,3 +1,4 @@
+"use client"
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -9,10 +10,103 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { SectionCardsProps } from "@/types/IDashboardTypes"
 
-export function SectionCards() {
+export function SectionCards({dashBoard}: SectionCardsProps) {
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 ">
+     
+      {/* Total customers */}
+      <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader>
+          <CardDescription>Total Enquire</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+           {dashBoard?.totalEnquire}
+          </CardTitle>
+          <CardAction>
+            <Badge variant="outline">
+              <IconTrendingDown />
+              -20%
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1.5 text-sm">
+          <div className="line-clamp-1 flex gap-2 font-medium">
+            Down 20% this period <IconTrendingDown className="size-4" />
+          </div>
+          <div className="text-muted-foreground">
+            Acquisition needs attention
+          </div>
+        </CardFooter>
+      </Card>
+         {/* New customers */}
+      <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader>
+          <CardDescription>New Customers</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+           {dashBoard?.totalUsers}
+          </CardTitle>
+          <CardAction>
+            <Badge variant="outline">
+              <IconTrendingDown />
+              -20%
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1.5 text-sm">
+          <div className="line-clamp-1 flex gap-2 font-medium">
+            Down 20% this period <IconTrendingDown className="size-4" />
+          </div>
+          <div className="text-muted-foreground">
+            Acquisition needs attention
+          </div>
+        </CardFooter>
+      </Card>
+       {/* total active users */}
+      <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader>
+          <CardDescription>Active Accounts</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            45,678
+          </CardTitle>
+          <CardAction>
+            <Badge variant="outline">
+              <IconTrendingUp />
+              +12.5%
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1.5 text-sm">
+          <div className="line-clamp-1 flex gap-2 font-medium">
+            Strong user retention <IconTrendingUp className="size-4" />
+          </div>
+          <div className="text-muted-foreground">Engagement exceed targets</div>
+        </CardFooter>
+      </Card>
+       {/* Total Orders */}
+      <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader>
+          <CardDescription>Total Orders</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+           {dashBoard?.totalOrders}
+          </CardTitle>
+          <CardAction>
+            <Badge variant="outline">
+              <IconTrendingUp />
+              +12.5%
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1.5 text-sm">
+          <div className="line-clamp-1 flex gap-2 font-medium">
+            Trending up this month <IconTrendingUp className="size-4" />
+          </div>
+          <div className="text-muted-foreground">
+            Visitors for the last 6 months
+          </div>
+        </CardFooter>
+      </Card>
+       {/* Total Revenue */}
       <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
         <CardHeader>
           <CardDescription>Total Revenue</CardDescription>
@@ -35,51 +129,7 @@ export function SectionCards() {
           </div>
         </CardFooter>
       </Card>
-
-      <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <CardHeader>
-          <CardDescription>New Customers</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingDown />
-              -20%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <IconTrendingDown className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
-          </div>
-        </CardFooter>
-      </Card>
-
-      <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
-        </CardFooter>
-      </Card>
-
+      {/* Growth Rate */}
       <Card className="@container/card shadow-lg hover:shadow-xl transition-shadow duration-300">
         <CardHeader>
           <CardDescription>Growth Rate</CardDescription>

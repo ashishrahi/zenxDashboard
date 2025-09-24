@@ -7,7 +7,6 @@ import { Sidebar } from "@/AppComponents/AppSidebar";
 import { Header } from "@/AppComponents/AppHeader";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Providers } from "@/providers/index";
-import { Toaster } from "sonner";
 const queryClient = new QueryClient();
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -40,7 +39,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <body className="bg-[#0f0f0f] text-gray-100 font-sans">
+      <body className="bg-background text-gray-100 font-sans">
+
         <QueryClientProvider client={queryClient}>
           <Providers>
             {isPublicRoute ? (
@@ -56,7 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   />
                   <div className="flex flex-col flex-1">
                     <Header onToggleSidebar={toggleSidebar} />
-                    <Toaster richColors />
                     <main className="flex-1 overflow-y-auto p-5 bg-blend-darken">
                       {children}
                     </main>

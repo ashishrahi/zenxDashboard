@@ -5,7 +5,7 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import Link from "next/link";
 import clsx from "clsx";
 import { useState } from "react";
-
+import { useRouter } from "next/navigation";
 interface SidebarProps {
   isCollapsed: boolean;       // Desktop
   isMobileOpen: boolean;      // Mobile
@@ -13,6 +13,11 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
+    const router = useRouter();
+
+  const handleNavigate = () => {
+    router.push("/dashboard"); // navigates to /dashboard
+  };
   return (
     <>
       {/* Overlay for mobile */}
@@ -35,7 +40,12 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
         {/* Logo / Top */}
         <div className="flex items-center justify-center p-4 border-b border-gray-800 relative">
           {!isCollapsed && (
-            <h1 className="font-bold text-xl text-red-600 tracking-wide">Genric</h1>
+            <h1
+      className="font-bold text-xl text-red-600 tracking-wide cursor-pointer"
+      onClick={handleNavigate}
+    >
+      Genric
+    </h1>
           )}
 
           {/* Close button for mobile */}
@@ -155,6 +165,15 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             isCollapsed={isCollapsed}
             items={[
               { name: "Export", href: "/exports" },
+              // { name: "Active", href: "/active" },
+            ]}
+          />
+             <SidebarSection
+            title="ENQUIRE"
+            icon={<BoxesIcon className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
+            items={[
+              { name: "Equire", href: "/enquire" },
               // { name: "Active", href: "/active" },
             ]}
           />

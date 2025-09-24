@@ -13,7 +13,6 @@ interface Props {
 export default function AppProtectedRoute({ children }: Props) {
   const router = useRouter();
   const token = useSelector((state: RootState) => state.auth.token);
-  console.log('token', token)
 
   useEffect(() => {
     if (!token) {

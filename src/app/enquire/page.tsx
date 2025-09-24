@@ -2,80 +2,93 @@
 import { useState } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import { AddBannerDialog } from "@/AppComponents/AppBannerDialog"; // you need to create this
+import { AddEnquireDialog } from "@/AppComponents/AppEnquireDialog";
 import { ShadCNPagination } from "@/AppComponents/AppPagination";
 import AppHeaderActions from "@/AppComponents/AppHeaderActions";
-import { IBannerPayload } from "@/types/bannerTypes";
+import { IEnquire } from "@/types/IEnquireTypes";
 
 import {
-  useBanners,
-  useAddBanner,
-  useUpdateBanner,
-  useDeleteBanner,
-} from "@/hooks/Banners/index"; // make hooks similar to categories
+  useEnquires,
+  useAddEnquire,
+  useUpdateEnquire,
+  useDeleteEnquire,
+} from "@/hooks/Enquires/index";
+
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
-import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
-import { Column } from "@/types/ITable";
-import {columns} from "@/AppComponents/columns/bannerColumns"
 
+// Column type
+export interface Column<RowType> {
+  key: keyof RowType;
+  label: string;
+  render?: (row: RowType) => React.ReactNode;
+}
 
-
-
-export default function BannerPage() {
+export default function EnquirePage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedBanner, setSelectedBanner] = useState<IBannerPayload | null>(null);
+  const [selectedEnquire, setSelectedEnquire] = useState<IEnquire | null>(null);
 
-  const { data: banners = [], isLoading } = useBanners();
-  const addBanner = useAddBanner();
-  const updateBanner = useUpdateBanner();
-  const deleteBanner = useDeleteBanner();
+  const { data: enquires = [], isLoading } = useEnquires();
+  const addEnquire = useAddEnquire();
+  const updateEnquire = useUpdateEnquire();
+  const deleteEnquire = useDeleteEnquire();
 
-  const filteredBanners = banners.filter((b) =>
-    (b.title ?? "").toLowerCase().includes(filterText.toLowerCase())
+  // Filter by name
+  const filteredEnquires = enquires.filter((e) =>
+    e.name.toLowerCase().includes(filterText.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredBanners.length / pageSize);
-  const paginatedBanners = filteredBanners.slice(
+  // Pagination
+  const totalPages = Math.ceil(filteredEnquires.length / pageSize);
+  const paginatedEnquires = filteredEnquires.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  // Dialog open functions
+  // Dialog handlers
   const openAddDialog = () => {
-    setSelectedBanner(null);
+    setSelectedEnquire(null);
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (banner: IBannerPayload) => {
-    setSelectedBanner(banner);
+  const openEditDialog = (enquire: IEnquire) => {
+    setSelectedEnquire(enquire);
     setIsDialogOpen(true);
   };
 
-  // Submit banner
-  const handleSubmitBanner = (banner: IBannerPayload) => {
-    if (banner._id) {
-      updateBanner.mutate(banner);
+  const handleSubmitEnquire = (enquire: IEnquire) => {
+    if (enquire._id) {
+      updateEnquire.mutate(enquire);
     } else {
-      addBanner.mutate(banner);
+      addEnquire.mutate(enquire);
     }
     setIsDialogOpen(false);
   };
 
-  // Delete banner
-  const handleDelete = (banner: IBannerPayload) => deleteBanner.mutate(banner._id);
+  const handleDelete = (enquire: IEnquire) => deleteEnquire.mutate(enquire._id!);
 
+  // Table columns
+  const columns: Column<IEnquire>[] = [
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Phone" },
+    { key: "message", label: "Message" },
+    {
+      key: "createdAt",
+      label: "Created At",
+      render: (row) => new Date(row.createdAt).toLocaleString(),
+    },
+  ];
 
   return (
-    <AppProtectedRoute>
     <AppContainer>
       <div className="p-3 grid gap-6">
         {/* Header Actions */}
         <AppHeaderActions
-          title="Add Banner"
+          title="Add Enquiry"
           filterText={filterText}
           setFilterText={setFilterText}
           onAddClick={openAddDialog}
@@ -90,9 +103,9 @@ export default function BannerPage() {
           {isLoading ? (
             <TableSkeleton rows={pageSize} />
           ) : (
-            <GlobalTable<IBannerPayload>
+            <GlobalTable<IEnquire>
               columns={columns}
-              data={paginatedBanners}
+              data={paginatedEnquires}
               onEdit={openEditDialog}
               onDelete={handleDelete}
             />
@@ -114,14 +127,13 @@ export default function BannerPage() {
         </div>
 
         {/* Add/Edit Dialog */}
-        <AddBannerDialog
+        <AddEnquireDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onSubmitBanner={handleSubmitBanner}
-          bannerToEdit={selectedBanner || undefined}
+          onSubmitEnquire={handleSubmitEnquire}
+          enquireToEdit={selectedEnquire || undefined}
         />
       </div>
     </AppContainer>
-    </AppProtectedRoute>
   );
 }
