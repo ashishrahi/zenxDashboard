@@ -24,7 +24,7 @@ export interface ISubcategoryPayload {
   slug: string;
   description?: string;
   images: string[];
-  parentCategoryId: string;
+  categoryId: string;
 }
 
 export default function SubcategoryPage() {
@@ -41,23 +41,12 @@ export default function SubcategoryPage() {
   const updateSubcategory = useUpdateSubcategory();
   const deleteSubcategory = useDeleteSubcategory();
 
-  // Map category name to _id for editing and convert id to _id
-  const subcategoriesWithCategoryId = useMemo(() => {
-    return subcategories.map(sub => {
-      const categoryObj = categories.find(c => c._id === sub.categoryId); // use categoryId
-      return {
-        ...sub,
-        _id: sub._id,
-        parentCategoryId: categoryObj?._id ?? "",
-      };
-    });
-  }, [subcategories, categories]);
-  ;
-
-  const filteredSubcategories = subcategoriesWithCategoryId.filter(c =>
-    (c.name ?? "").toLowerCase().includes(filterText.toLowerCase())
-  );
-
+  // Keep subcategories as-is, no parentCategoryId
+  const filteredSubcategories = useMemo(() => {
+    return subcategories.filter(c =>
+      (c.name ?? "").toLowerCase().includes(filterText.toLowerCase())
+    );
+  }, [subcategories, filterText]);
 
   const totalPages = Math.ceil(filteredSubcategories.length / pageSize);
   const paginatedSubcategories = filteredSubcategories.slice(
@@ -71,8 +60,8 @@ export default function SubcategoryPage() {
   };
 
   const openEditDialog = (subcategory: ISubcategory) => {
-    const mappedSub = subcategoriesWithCategoryId.find(s => s._id === subcategory._id);
-    setSelectedSubcategory(mappedSub ?? null);
+    const sub = subcategories.find(s => s._id === subcategory._id);
+    setSelectedSubcategory(sub ?? null);
     setIsDialogOpen(true);
   };
 
@@ -85,16 +74,16 @@ export default function SubcategoryPage() {
     setIsDialogOpen(false);
   };
 
-const handleDelete = (subcategory: ISubcategory) => {
-  if (!subcategory._id) return; // skip if _id is undefined
-  deleteSubcategory.mutate(subcategory._id);
-};
+  const handleDelete = (subcategory: ISubcategory) => {
+    if (!subcategory._id) return;
+    deleteSubcategory.mutate(subcategory._id);
+  };
 
   const columns = [
     { key: "name", label: "Name" },
     { key: "slug", label: "Slug" },
     { key: "description", label: "Description" },
-    { key: "category", label: "Parent Category" },
+    { key: "category", label: "Category" },
     {
       key: "images",
       label: "Images",
@@ -113,7 +102,6 @@ const handleDelete = (subcategory: ISubcategory) => {
         row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : "N/A",
     },
   ];
-
 
   return (
     <AppContainer>
@@ -153,18 +141,17 @@ const handleDelete = (subcategory: ISubcategory) => {
           subcategoryToEdit={
             selectedSubcategory
               ? {
-                _id: selectedSubcategory._id,
-                name: selectedSubcategory.name || "",
-                slug: selectedSubcategory.slug || "",
-                description: selectedSubcategory.description || "",
-                images: selectedSubcategory.images || [],
-                parentCategoryId: selectedSubcategory.categoryId || "", // map categoryId
-              }
+                  _id: selectedSubcategory._id,
+                  name: selectedSubcategory.name || "",
+                  slug: selectedSubcategory.slug || "",
+                  description: selectedSubcategory.description || "",
+                  images: selectedSubcategory.images || [],
+                  categoryId: selectedSubcategory.categoryId || "",
+                }
               : undefined
           }
           categories={categories}
         />
-
       </div>
     </AppContainer>
   );

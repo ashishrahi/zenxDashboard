@@ -17,36 +17,18 @@ export const CategoryService = {
   },
 
   // Create a new category with files
-  create: async (category: Omit<ICategoryPayload, "id" | "images"> & { images: File[] }) => {
-    const formData = new FormData();
-    formData.append("name", category.name);
-    formData.append("slug", category.slug);
-    if (category.description) formData.append("description", category.description);
-
-    category.images.forEach((file) => formData.append("images", file));
-
+  create: async (formData: FormData) => {
     const response = await axiosInstance.post("/categories/create", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-
     return response?.data?.data;
   },
 
-  // Update an existing category with files
-  update: async (category: ICategoryPayload & { images?: File[] }) => {
-    const formData = new FormData();
-    formData.append("name", category.name);
-    formData.append("slug", category.slug);
-    if (category.description) formData.append("description", category.description);
-
-    if (category.images && category.images.length > 0) {
-      category.images.forEach((file) => formData.append("images", file));
-    }
-
-    const response = await axiosInstance.put(`/categories/update/${category._id}`, formData, {
+  // Update an existing category with files and existing images
+  update: async (id: string, formData: FormData) => {
+    const response = await axiosInstance.put(`/categories/update/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-
     return response?.data?.data;
   },
 
@@ -55,4 +37,3 @@ export const CategoryService = {
     await axiosInstance.delete(`/categories/delete/${id}`);
   },
 };
-  

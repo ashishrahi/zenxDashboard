@@ -16,44 +16,24 @@ export const SubcategoryService = {
     return data?.data;
   },
 
-  // Create a new subcategory (supports image files)
-  create: async (subcategory: Omit<ISubcategory, "_id" | "images"> & { images?: File[] }) => {
-    const formData = new FormData();
-    formData.append("name", subcategory.name ?? "");
-    formData.append("slug", subcategory.slug ?? "");
-    formData.append("description", subcategory.description ?? "");
-    formData.append("categoryId", subcategory.categoryId?.toString() ?? "");
-
-    // Append image files if provided
-    subcategory.images?.forEach((file) => formData.append("images", file));
-
+  // Create a new subcategory
+  create: async (formData: FormData) => {
     const { data } = await axiosInstance.post("/subcategories/create", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-
     return data?.data;
   },
 
-  // Update an existing subcategory (supports image files)
-  update: async (subcategory: ISubcategory & { images?: File[] }) => {
-    const formData = new FormData();
-    formData.append("name", subcategory.name ?? "");
-    formData.append("slug", subcategory.slug ?? "");
-    formData.append("description", subcategory.description ?? "");
-    formData.append("categoryId", subcategory.categoryId?.toString() ?? "");
-
-    // Append new image files if provided
-    subcategory.images?.forEach((file) => formData.append("images", file));
-
-    const { data } = await axiosInstance.put(`/subcategories/update/${subcategory._id}`, formData, {
+  // Update an existing subcategory
+  update: async (id: string, formData: FormData) => {
+    const { data } = await axiosInstance.put(`/subcategories/update/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-
     return data?.data;
   },
 
   // Delete a subcategory by ID
   delete: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/subcategories/${id}`);
+    await axiosInstance.delete(`/subcategories/delete/${id}`);
   },
 };

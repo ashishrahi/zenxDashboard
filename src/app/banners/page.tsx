@@ -16,9 +16,21 @@ import {
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
-import { Column } from "@/types/ITable";
-import {columns} from "@/AppComponents/columns/bannerColumns"
 
+// Column type for table
+export interface Column<RowType> {
+  key: keyof RowType; 
+  label: string;
+  render?: (row: RowType) => React.ReactNode;
+}
+
+export interface GlobalTableProps<RowType extends { _id: string }> {
+  columns: Column<RowType>[];
+  data: RowType[];
+  onEdit?: (row: RowType) => void;
+  onDelete?: (row: RowType) => void;
+  title?: string;
+}
 
 
 
@@ -68,6 +80,31 @@ export default function BannerPage() {
   // Delete banner
   const handleDelete = (banner: IBannerPayload) => deleteBanner.mutate(banner._id);
 
+  // Table columns
+  const columns: Column<IBannerPayload>[] = [
+    { key: "title", label: "Title" },
+    { key: "description", label: "Description" },
+    {
+      key: "images",
+      label: "Images",
+      render: (row) => row.images?.length || "No images",
+    },
+    {
+      key: "isActive",
+      label: "Active",
+      render: (row) => (row.isActive ? "Yes" : "No"),
+    },
+    {
+      key: "createdAt",
+      label: "Created At",
+      render: (row) => new Date(row.createdAt).toLocaleDateString(),
+    },
+    {
+      key: "updatedAt",
+      label: "Updated At",
+      render: (row) => new Date(row.updatedAt).toLocaleDateString(),
+    },
+  ];
 
   return (
     <AppProtectedRoute>

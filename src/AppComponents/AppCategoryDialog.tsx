@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -20,6 +20,7 @@ import {
   Link,
   Edit3,
   Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { AppButton } from "./AppButton";
 import { ICategoryPayload } from "@/types/categoriesTypes";
@@ -31,6 +32,12 @@ interface AddCategoryDialogProps {
   onClose: () => void;
   categoryToEdit?: ICategoryPayload;
   onCategorySaved?: () => void;
+}
+
+interface ImageState {
+  url: string;
+  type: 'existing' | 'new';
+  file?: File;
 }
 
 export function AddCategoryDialog({
@@ -56,25 +63,61 @@ export function AddCategoryDialog({
     },
   });
 
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]); // For preview
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // For sending to backend
+  const [images, setImages] = useState<ImageState[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  const formValues = watch();
+
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      images.forEach(image => {
+        if (image.type === 'new' && image.url.startsWith('blob:')) {
+          URL.revokeObjectURL(image.url);
+        }
+      });
+    };
+  }, [images]);
+
+  // Reset form function
+  const resetForm = useCallback(() => {
+    reset({
+      _id: "",
+      name: "",
+      slug: "",
+      description: "",
+      images: [],
+    });
+    setImages([]);
+  }, [reset]);
 
   // Populate form when editing
   useEffect(() => {
+    if (!isOpen) {
+      if (categoryToEdit) {
+        resetForm();
+      }
+      return;
+    }
+
     if (categoryToEdit) {
+      console.log("Editing category:", categoryToEdit);
+      
       setValue("_id", categoryToEdit._id ?? "");
       setValue("name", categoryToEdit.name ?? "");
       setValue("slug", categoryToEdit.slug ?? "");
       setValue("description", categoryToEdit.description ?? "");
-      setUploadedImages(categoryToEdit.images ?? []);
-      setUploadedFiles([]); // New files will be appended if user uploads
+
+      // Set existing images
+      const existingImages: ImageState[] = (categoryToEdit.images || []).map(url => ({
+        url,
+        type: 'existing'
+      }));
+      setImages(existingImages);
     } else {
-      reset();
-      setUploadedImages([]);
-      setUploadedFiles([]);
+      resetForm();
     }
-  }, [categoryToEdit, setValue, reset, isOpen]);
+  }, [isOpen, categoryToEdit, setValue, resetForm]);
 
   // Generate slug from name
   const generateSlugFromName = (name: string) =>
@@ -89,60 +132,113 @@ export function AddCategoryDialog({
     }
   };
 
-  // Handle image upload (preview + store files)
+  // Handle image upload
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     setIsUploading(true);
-
     const filesArray = Array.from(files);
+    
+    const newImages: ImageState[] = filesArray.map((file) => ({
+      url: URL.createObjectURL(file),
+      type: 'new',
+      file: file
+    }));
 
-    // Preview URLs
-    const urls = filesArray.map((file) => URL.createObjectURL(file));
-    setUploadedImages((prev) => [...prev, ...urls]);
-    setUploadedFiles((prev) => [...prev, ...filesArray]);
-
+    setImages((prev) => [...prev, ...newImages]);
     setIsUploading(false);
+    
+    // Clear the file input
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    const imageToRemove = images[index];
+    
+    // Revoke object URL for new images
+    if (imageToRemove.type === 'new' && imageToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(imageToRemove.url);
+    }
+    
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Fixed onSubmit function
   const onSubmit = async (data: ICategoryPayload) => {
-    setIsUploading(true);
+    if (!data.name || !data.slug) {
+      alert("Please fill all required fields");
+      return;
+    }
 
+    setIsUploading(true);
     try {
+      // Separate existing URLs from new files
+      const existingImageUrls = images
+        .filter(img => img.type === 'existing')
+        .map(img => img.url);
+
+      const newImageFiles = images
+        .filter(img => img.type === 'new' && img.file)
+        .map(img => img.file) as File[];
+
       if (categoryToEdit?._id) {
-        // Update category
-        await CategoryService.update({
-          ...data,
-          images: uploadedFiles,
+        // Create FormData for update
+        const formData = new FormData();
+        
+        // Append all non-image fields
+        formData.append('name', data.name);
+        formData.append('slug', data.slug);
+        if (data.description) {
+          formData.append('description', data.description);
+        }
+
+        // Append existing images as JSON array
+        formData.append('existingImages', JSON.stringify(existingImageUrls));
+
+        // Append new image files
+        newImageFiles.forEach(file => {
+          formData.append('images', file);
         });
+
+        console.log('Updating category with ID:', categoryToEdit._id);
+        await CategoryService.update(categoryToEdit._id, formData);
       } else {
-        // Create new category
-        await CategoryService.create({
-          ...data,
-          images: uploadedFiles,
+        // Create FormData for new category
+        const formData = new FormData();
+        
+        formData.append('name', data.name);
+        formData.append('slug', data.slug);
+        if (data.description) {
+          formData.append('description', data.description);
+        }
+
+        // Append new image files
+        newImageFiles.forEach(file => {
+          formData.append('images', file);
         });
+
+        await CategoryService.create(formData);
       }
 
-      reset();
-      setUploadedImages([]);
-      setUploadedFiles([]);
+      resetForm();
       onClose();
-      onCategorySaved?.(); // optional callback to refresh list
-    } catch (err) {
+      onCategorySaved?.();
+    } catch (err: any) {
       console.error("Error saving category:", err);
+      alert(`Error saving category: ${err.response?.data?.message || err.message}`);
     } finally {
       setIsUploading(false);
     }
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[80vh] overflow-y-auto scrollbar-hide">
         <DialogHeader className="pb-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -167,7 +263,7 @@ export function AddCategoryDialog({
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Category Name
+              Category Name *
             </Label>
             <div className="relative">
               <Input
@@ -176,6 +272,7 @@ export function AddCategoryDialog({
                   required: "Category name is required",
                   minLength: { value: 2, message: "Name must be at least 2 characters" },
                 })}
+                value={formValues.name || ""}
                 onChange={handleNameChange}
                 placeholder="e.g., Summer Collection"
                 className="pr-10 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
@@ -190,7 +287,7 @@ export function AddCategoryDialog({
           {/* Slug */}
           <div className="space-y-2">
             <Label htmlFor="slug" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              URL Slug
+              URL Slug *
             </Label>
             <div className="relative">
               <Input
@@ -202,6 +299,8 @@ export function AddCategoryDialog({
                     message: "Slug can only contain lowercase letters, numbers, and hyphens",
                   },
                 })}
+                value={formValues.slug || ""}
+                onChange={(e) => setValue("slug", e.target.value)}
                 placeholder="e.g., summer-collection"
                 className="pr-10 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               />
@@ -221,6 +320,8 @@ export function AddCategoryDialog({
               <Textarea
                 id="description"
                 {...register("description")}
+                value={formValues.description || ""}
+                onChange={(e) => setValue("description", e.target.value)}
                 placeholder="Describe this category..."
                 className="pr-10 pt-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none h-24"
               />
@@ -234,6 +335,12 @@ export function AddCategoryDialog({
           <div className="space-y-2 md:col-span-2">
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
               <ImageIcon size={16} /> Images
+              {images.length > 0 && (
+                <span className="text-xs text-gray-500">
+                  ({images.filter(img => img.type === 'existing').length} existing, 
+                  {images.filter(img => img.type === 'new').length} new)
+                </span>
+              )}
             </Label>
 
             <div className="flex items-center gap-3">
@@ -243,7 +350,7 @@ export function AddCategoryDialog({
                   isUploading ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >
-                <Upload size={16} />
+                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {isUploading ? "Uploading..." : "Upload Images"}
               </label>
               <input
@@ -256,24 +363,33 @@ export function AddCategoryDialog({
                 disabled={isUploading}
               />
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {uploadedImages.length} image(s) selected
+                {images.length} image(s) selected
               </span>
             </div>
 
-            {uploadedImages.length > 0 && (
+            {images.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mt-2">
-                {uploadedImages.map((url, idx) => (
+                {images.map((image, idx) => (
                   <div
                     key={idx}
                     className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
                   >
                     <Image
-                      src={url}
+                      src={image.url}
                       alt={`preview-${idx}`}
                       width={200}
                       height={200}
                       className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
                     />
+                    <div className="absolute top-1 left-1">
+                      <span className={`text-xs px-1 rounded ${
+                        image.type === 'existing' 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-blue-500 text-white'
+                      }`}>
+                        {image.type === 'existing' ? 'Existing' : 'New'}
+                      </span>
+                    </div>
                     <AppButton
                       type="button"
                       onClick={() => removeImage(idx)}
@@ -293,7 +409,8 @@ export function AddCategoryDialog({
               variant="outline"
               type="button"
               className="flex items-center gap-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={onClose}
+              onClick={handleClose}
+              disabled={isUploading}
             >
               <XCircle size={16} /> Cancel
             </AppButton>
@@ -302,7 +419,12 @@ export function AddCategoryDialog({
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
               disabled={isUploading}
             >
-              <Upload size={16} /> {categoryToEdit ? "Update Category" : "Add Category"}
+              {isUploading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Upload size={16} />
+              )}
+              {isUploading ? "Saving..." : (categoryToEdit ? "Update Category" : "Add Category")}
             </AppButton>
           </DialogFooter>
         </form>

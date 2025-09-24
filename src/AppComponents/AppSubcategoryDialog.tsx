@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -20,17 +20,25 @@ import {
   Link,
   Edit3,
   Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { AppButton } from "./AppButton";
-import { ISubcategoryPayload } from "@/types/subcategoryTypes";
+import { ISubcategory } from "@/types/subcategoryTypes";
 import { SubcategoryService } from "@/services/subcategoryService";
+import Image from "next/image";
 
 interface AddSubcategoryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  subcategoryToEdit?: ISubcategoryPayload & { images?: string[] };
+  subcategoryToEdit?: ISubcategory & { images?: string[] };
   categories: { _id: string; name: string }[];
   onSubcategorySaved?: () => void;
+}
+
+interface ImageState {
+  url: string;
+  type: 'existing' | 'new';
+  file?: File;
 }
 
 export function AddSubcategoryDialog({
@@ -47,7 +55,7 @@ export function AddSubcategoryDialog({
     reset,
     watch,
     formState: { errors },
-  } = useForm<ISubcategoryPayload>({
+  } = useForm<ISubcategory>({
     defaultValues: {
       _id: "",
       name: "",
@@ -57,40 +65,74 @@ export function AddSubcategoryDialog({
     },
   });
 
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [images, setImages] = useState<ImageState[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Watch all form values
   const formValues = watch();
 
-  // Populate form when editing - SIMPLIFIED FIX
+  // Cleanup object URLs when component unmounts
   useEffect(() => {
-    if (isOpen) {
+    return () => {
+      images.forEach(image => {
+        if (image.type === 'new' && image.url.startsWith('blob:')) {
+          URL.revokeObjectURL(image.url);
+        }
+      });
+    };
+  }, [images]);
+
+  // Reset form function
+  const resetForm = useCallback(() => {
+    reset({
+      _id: "",
+      name: "",
+      slug: "",
+      description: "",
+      categoryId: "",
+    });
+    setImages([]);
+  }, [reset]);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (!isOpen) {
       if (subcategoryToEdit) {
-        // Set all values at once for editing
-        reset({
-          _id: subcategoryToEdit._id || "",
-          name: subcategoryToEdit.name || "",
-          slug: subcategoryToEdit.slug || "",
-          description: subcategoryToEdit.description || "",
-          categoryId: subcategoryToEdit.categoryId || "",
-        });
-        setUploadedImages(subcategoryToEdit.images || []);
-      } else {
-        // Reset for new subcategory
-        reset({
-          _id: "",
-          name: "",
-          slug: "",
-          description: "",
-          categoryId: "",
-        });
-        setUploadedImages([]);
+        resetForm();
       }
-      setUploadedFiles([]);
+      return;
     }
-  }, [subcategoryToEdit, isOpen, reset]);
+
+    if (subcategoryToEdit) {
+      console.log("Editing subcategory:", subcategoryToEdit);
+      
+      setValue("_id", subcategoryToEdit._id || "");
+      setValue("name", subcategoryToEdit.name || "");
+      setValue("slug", subcategoryToEdit.slug || "");
+      setValue("description", subcategoryToEdit.description || "");
+
+      // Set existing images
+      const existingImages: ImageState[] = (subcategoryToEdit.images || []).map(url => ({
+        url,
+        type: 'existing'
+      }));
+      setImages(existingImages);
+
+      // Set categoryId
+      if (categories.length > 0 && subcategoryToEdit.categoryId) {
+        const catId = String(subcategoryToEdit.categoryId);
+        const categoryExists = categories.some(cat => cat._id === catId);
+        
+        if (categoryExists) {
+          console.log("Setting categoryId:", catId);
+          setValue("categoryId", catId);
+        } else {
+          setValue("categoryId", "");
+        }
+      }
+    } else {
+      resetForm();
+    }
+  }, [isOpen, subcategoryToEdit, categories, setValue, resetForm]);
 
   // Generate slug from name
   const generateSlugFromName = (name: string) =>
@@ -100,7 +142,6 @@ export function AddSubcategoryDialog({
     const name = e.target.value;
     setValue("name", name);
 
-    // Only auto-generate slug if we're creating new or if the slug matches the auto-generated pattern
     if (!subcategoryToEdit || formValues.slug === generateSlugFromName(subcategoryToEdit.name || "")) {
       setValue("slug", generateSlugFromName(name));
     }
@@ -113,23 +154,33 @@ export function AddSubcategoryDialog({
 
     setIsUploading(true);
     const filesArray = Array.from(files);
-    const previewUrls = filesArray.map((file) => URL.createObjectURL(file));
+    
+    const newImages: ImageState[] = filesArray.map((file) => ({
+      url: URL.createObjectURL(file),
+      type: 'new',
+      file: file
+    }));
 
-    setUploadedFiles((prev) => [...prev, ...filesArray]);
-    setUploadedImages((prev) => [...prev, ...previewUrls]);
+    setImages((prev) => [...prev, ...newImages]);
     setIsUploading(false);
+    
+    // Clear the file input
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
-    const existingLength = subcategoryToEdit?.images?.length ?? 0;
-    if (index >= existingLength) {
-      const fileIndex = index - existingLength;
-      setUploadedFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+    const imageToRemove = images[index];
+    
+    // Revoke object URL for new images
+    if (imageToRemove.type === 'new' && imageToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(imageToRemove.url);
     }
+    
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const onSubmit = async (data: ISubcategoryPayload) => {
+  // Fixed onSubmit function
+  const onSubmit = async (data: ISubcategory) => {
     if (!data.name || !data.slug || !data.categoryId) {
       alert("Please fill all required fields");
       return;
@@ -137,32 +188,70 @@ export function AddSubcategoryDialog({
 
     setIsUploading(true);
     try {
+      // Separate existing URLs from new files
+      const existingImageUrls = images
+        .filter(img => img.type === 'existing')
+        .map(img => img.url);
+
+      const newImageFiles = images
+        .filter(img => img.type === 'new' && img.file)
+        .map(img => img.file) as File[];
+
       if (subcategoryToEdit?._id) {
-        await SubcategoryService.update({
-          ...data,
-          images: uploadedFiles,
+        // Create FormData for update
+        const formData = new FormData();
+        
+        // Append all non-image fields
+        formData.append('name', data.name);
+        formData.append('slug', data.slug);
+        formData.append('description', data.description || '');
+        formData.append('categoryId', data.categoryId);
+
+        // Append existing images as JSON array
+        formData.append('existingImages', JSON.stringify(existingImageUrls));
+
+        // Append new image files
+        newImageFiles.forEach(file => {
+          formData.append('images', file);
         });
+
+        console.log('Updating subcategory with ID:', subcategoryToEdit._id);
+        await SubcategoryService.update(subcategoryToEdit._id, formData);
       } else {
-        await SubcategoryService.create({
-          ...data,
-          images: uploadedFiles,
+        // Create FormData for new subcategory
+        const formData = new FormData();
+        
+        formData.append('name', data.name);
+        formData.append('slug', data.slug);
+        formData.append('description', data.description || '');
+        formData.append('categoryId', data.categoryId);
+
+        // Append new image files
+        newImageFiles.forEach(file => {
+          formData.append('images', file);
         });
+
+        await SubcategoryService.create(formData);
       }
 
-      reset();
-      setUploadedImages([]);
-      setUploadedFiles([]);
+      resetForm();
       onClose();
       onSubcategorySaved?.();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving subcategory:", err);
+      alert(`Error saving subcategory: ${err.response?.data?.message || err.message}`);
     } finally {
       setIsUploading(false);
     }
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[80vh] overflow-y-auto scrollbar-hide">
         <DialogHeader className="pb-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -181,7 +270,7 @@ export function AddSubcategoryDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <input type="hidden" {...register("_id")} />
 
-          {/* Category - FIXED VERSION */}
+          {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="categoryId" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Category *
@@ -189,8 +278,6 @@ export function AddSubcategoryDialog({
             <select
               id="categoryId"
               {...register("categoryId", { required: "Category is required" })}
-              value={formValues.categoryId || ""}
-              onChange={(e) => setValue("categoryId", e.target.value)}
               className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             >
               <option value="">Select a category</option>
@@ -280,6 +367,12 @@ export function AddSubcategoryDialog({
           <div className="space-y-2 md:col-span-2">
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
               <ImageIcon size={16} /> Images
+              {images.length > 0 && (
+                <span className="text-xs text-gray-500">
+                  ({images.filter(img => img.type === 'existing').length} existing, 
+                  {images.filter(img => img.type === 'new').length} new)
+                </span>
+              )}
             </Label>
             <div className="flex items-center gap-3">
               <label
@@ -288,7 +381,7 @@ export function AddSubcategoryDialog({
                   isUploading ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >
-                <Upload size={16} />
+                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {isUploading ? "Uploading..." : "Upload Images"}
               </label>
               <input
@@ -301,15 +394,30 @@ export function AddSubcategoryDialog({
                 disabled={isUploading}
               />
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {uploadedImages.length} image(s) selected
+                {images.length} image(s) selected
               </span>
             </div>
 
-            {uploadedImages.length > 0 && (
+            {images.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mt-2">
-                {uploadedImages.map((url, idx) => (
+                {images.map((image, idx) => (
                   <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <img src={url} alt={`preview-${idx}`} className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105" />
+                    <Image 
+                      width={200} 
+                      height={200} 
+                      src={image.url} 
+                      alt={`preview-${idx}`} 
+                      className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105" 
+                    />
+                    <div className="absolute top-1 left-1">
+                      <span className={`text-xs px-1 rounded ${
+                        image.type === 'existing' 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-blue-500 text-white'
+                      }`}>
+                        {image.type === 'existing' ? 'Existing' : 'New'}
+                      </span>
+                    </div>
                     <AppButton
                       type="button"
                       onClick={() => removeImage(idx)}
@@ -329,12 +437,22 @@ export function AddSubcategoryDialog({
               variant="outline"
               type="button"
               className="flex items-center gap-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={onClose}
+              onClick={handleClose}
+              disabled={isUploading}
             >
               <XCircle size={16} /> Cancel
             </AppButton>
-            <AppButton type="submit" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700" disabled={isUploading}>
-              <Upload size={16} /> {subcategoryToEdit ? "Update Subcategory" : "Add Subcategory"}
+            <AppButton 
+              type="submit" 
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700" 
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Upload size={16} />
+              )}
+              {isUploading ? "Saving..." : (subcategoryToEdit ? "Update Subcategory" : "Add Subcategory")}
             </AppButton>
           </DialogFooter>
         </form>
