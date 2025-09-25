@@ -9,9 +9,11 @@ export interface IAuthState {
   email: string | null;
   loading: boolean;
   error: string | null;
+  user: IUser | null
 }
 
 export interface ILoginResponse {
   token: string;
   email: string;
+   user: IUser | null
 }
