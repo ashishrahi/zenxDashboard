@@ -238,12 +238,23 @@ export function AddSubcategoryDialog({
       resetForm();
       onClose();
       onSubcategorySaved?.();
-    } catch (err: any) {
-      console.error("Error saving subcategory:", err);
-      alert(`Error saving subcategory: ${err.response?.data?.message || err.message}`);
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (err: unknown) {
+  console.error("Error saving subcategory:", err);
+  
+  let errorMessage = "An unexpected error occurred";
+  
+  if (err instanceof Error) {
+    errorMessage = err.message;
+  } else if (err && typeof err === 'object' && 'response' in err) {
+    // Handle Axios-like error response
+    const axiosError = err as { response?: { data?: { message?: string } } };
+    errorMessage = axiosError.response?.data?.message || errorMessage;
+  }
+  
+  alert(`Error saving subcategory: ${errorMessage}`);
+} finally {
+  setIsUploading(false);
+}
   };
 
   const handleClose = () => {

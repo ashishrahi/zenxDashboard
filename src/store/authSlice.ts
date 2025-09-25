@@ -26,9 +26,18 @@ export const loginUser = createAsyncThunk<
 
       // ✅ Correctly return the nested data
       return response.data.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || "Login failed");
-    }
+    }catch (err: unknown) {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const error = err as { response?: { data?: { message?: string } } };
+    return rejectWithValue(error.response?.data?.message || "Login failed");
+  }
+  
+  if (err instanceof Error) {
+    return rejectWithValue(err.message);
+  }
+  
+  return rejectWithValue("Login failed");
+}
   }
 );
 
