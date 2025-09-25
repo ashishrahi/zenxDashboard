@@ -23,21 +23,19 @@ export const loginUser = createAsyncThunk<
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.post("/auth/login", userData);
-
-      // ✅ Correctly return the nested data
       return response.data.data;
-    }catch (err: unknown) {
-  if (err && typeof err === 'object' && 'response' in err) {
-    const error = err as { response?: { data?: { message?: string } } };
-    return rejectWithValue(error.response?.data?.message || "Login failed");
-  }
-  
-  if (err instanceof Error) {
-    return rejectWithValue(err.message);
-  }
-  
-  return rejectWithValue("Login failed");
-}
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const error = err as { response?: { data?: { message?: string } } };
+        return rejectWithValue(error.response?.data?.message || "Login failed");
+      }
+      
+      if (err instanceof Error) {
+        return rejectWithValue(err.message);
+      }
+      
+      return rejectWithValue("Login failed");
+    }
   }
 );
 
@@ -70,10 +68,10 @@ const authSlice = createSlice({
         state.error = null;
       })
       // ===== Login Fulfilled =====
-      .addCase(loginUser.fulfilled, (state, action: PayloadAction<any>) => {
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<ILoginResponse>) => {
         state.loading = false;
 
-        // ✅ Extract values correctly
+        // ✅ Extract values correctly with proper typing
         state.token = action.payload.token;
         state.email = action.payload.user.email;
         state.user = action.payload.user;
