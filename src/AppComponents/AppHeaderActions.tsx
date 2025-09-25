@@ -6,7 +6,7 @@ import {AppButton} from '@/AppComponents/AppButton'
 interface HeaderActionsProps {
   filterText: string;
   setFilterText: (value: string) => void;
-  onAddClick: () => void;
+  onAddClick?: () => void;
   title: string;
 
 }

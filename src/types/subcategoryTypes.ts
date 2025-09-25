@@ -3,7 +3,7 @@ export interface ISubcategory {
   name: string;
   slug: string;
   description?: string;
-  images: File[];
+  images?: (string | File)[];
   categoryId: string; // Frontend can just use string
   createdAt?: string; // ISO date string
   updatedAt?: string; // ISO date string

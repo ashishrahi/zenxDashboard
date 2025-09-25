@@ -73,23 +73,31 @@ export default function SubcategoryPage() {
   };
 
   const columns = [
-    { key: "name", label: "Name" },
-    { key: "slug", label: "Slug" },
-    { key: "description", label: "Description" },
-    { key: "category", label: "Category" },
+    { key: "name" as keyof ISubcategory, label: "Name" },
+    { key: "slug" as keyof ISubcategory, label: "Slug" },
+    { key: "description" as keyof ISubcategory, label: "Description" },
     {
-      key: "images",
+      key: "categoryId" as keyof ISubcategory,
+      label: "Category",
+      render: (row: ISubcategory) => {
+        // You'll need to map categoryId to category name
+        const category = categories.find(c => c._id === row.categoryId);
+        return category?.name || "N/A";
+      }
+    },
+    {
+      key: "images" as keyof ISubcategory,
       label: "Images",
       render: (row: ISubcategory) => (row.images?.length ?? 0) || "No images",
     },
     {
-      key: "createdAt",
+      key: "createdAt" as keyof ISubcategory,
       label: "Created At",
       render: (row: ISubcategory) =>
         row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "N/A",
     },
     {
-      key: "updatedAt",
+      key: "updatedAt" as keyof ISubcategory,
       label: "Updated At",
       render: (row: ISubcategory) =>
         row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : "N/A",
@@ -134,13 +142,13 @@ export default function SubcategoryPage() {
           subcategoryToEdit={
             selectedSubcategory
               ? {
-                  _id: selectedSubcategory._id,
-                  name: selectedSubcategory.name || "",
-                  slug: selectedSubcategory.slug || "",
-                  description: selectedSubcategory.description || "",
-                  images: selectedSubcategory.images || [],
-                  categoryId: selectedSubcategory.categoryId || "",
-                }
+                _id: selectedSubcategory._id,
+                name: selectedSubcategory.name || "",
+                slug: selectedSubcategory.slug || "",
+                description: selectedSubcategory.description || "",
+                images: (selectedSubcategory.images || []) as string[], // Explicitly cast to string[]
+                categoryId: selectedSubcategory.categoryId || "",
+              }
               : undefined
           }
           categories={categories}
