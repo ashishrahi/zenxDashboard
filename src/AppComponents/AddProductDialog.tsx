@@ -234,9 +234,9 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
   };
 
   // Check if image is marked for deletion
-  const isImageMarkedForDeletion = (variantIndex: number, imageUrl: string) => {
-    return deletedImages[variantIndex]?.includes(imageUrl) || false;
-  };
+  // const isImageMarkedForDeletion = (variantIndex: number, imageUrl: string) => {
+  //   return deletedImages[variantIndex]?.includes(imageUrl) || false;
+  // };
 
   // Get images that should be displayed (non-deleted ones)
   const getDisplayImages = (variantIndex: number) => {
@@ -312,7 +312,7 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
     
     // Append new variant images
     variantFiles.forEach((files, variantIndex) => {
-      files.forEach((file, fileIndex) => {
+      files.forEach((file) => {
         formData.append(`variantImages[${variantIndex}]`, file);
       });
     });

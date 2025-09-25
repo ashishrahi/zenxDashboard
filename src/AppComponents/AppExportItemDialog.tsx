@@ -14,24 +14,14 @@ import { Label } from "@/components/ui/label";
 import { AppButton } from "./AppButton";
 import { XCircle, Edit3 } from "lucide-react";
 import Image from "next/image";
+import { IExport } from "@/types/IExportItem";
 
-export interface IExportItem {
-  _id?: string;
-  country: string;
-  code: string;
-  flag?: string | File;
-  volume: string;
-  category: string;
-  isActive: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
 
 interface AddExportItemDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmitItem: (item: IExportItem) => void;
-  itemToEdit?: IExportItem;
+  onSubmitItem: (item: IExport) => void;
+  itemToEdit?: IExport;
 }
 
 export function AddExportItemDialog({
@@ -47,7 +37,7 @@ export function AddExportItemDialog({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<IExportItem>({
+  } = useForm<IExport>({
     defaultValues: {
       _id: "",
       country: "",
@@ -75,7 +65,7 @@ export function AddExportItemDialog({
     }
   }, [itemToEdit, setValue, reset, isOpen]);
 
-  const onSubmit = (data: IExportItem) => {
+  const onSubmit = (data: IExport) => {
     onSubmitItem(data);
     reset();
     onClose();

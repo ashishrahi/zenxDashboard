@@ -26,6 +26,7 @@ import { AppButton } from "./AppButton";
 import { ICategoryPayload } from "@/types/categoriesTypes";
 import { CategoryService } from "@/services/categoryService";
 import Image from "next/image";
+import { AxiosError } from "axios";
 
 interface AddCategoryDialogProps {
   isOpen: boolean;
@@ -102,7 +103,7 @@ export function AddCategoryDialog({
 
     if (categoryToEdit) {
       console.log("Editing category:", categoryToEdit);
-      
+
       setValue("_id", categoryToEdit._id ?? "");
       setValue("name", categoryToEdit.name ?? "");
       setValue("slug", categoryToEdit.slug ?? "");
@@ -139,7 +140,7 @@ export function AddCategoryDialog({
 
     setIsUploading(true);
     const filesArray = Array.from(files);
-    
+
     const newImages: ImageState[] = filesArray.map((file) => ({
       url: URL.createObjectURL(file),
       type: 'new',
@@ -148,19 +149,19 @@ export function AddCategoryDialog({
 
     setImages((prev) => [...prev, ...newImages]);
     setIsUploading(false);
-    
+
     // Clear the file input
     e.target.value = '';
   };
 
   const removeImage = (index: number) => {
     const imageToRemove = images[index];
-    
+
     // Revoke object URL for new images
     if (imageToRemove.type === 'new' && imageToRemove.url.startsWith('blob:')) {
       URL.revokeObjectURL(imageToRemove.url);
     }
-    
+
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -185,7 +186,7 @@ export function AddCategoryDialog({
       if (categoryToEdit?._id) {
         // Create FormData for update
         const formData = new FormData();
-        
+
         // Append all non-image fields
         formData.append('name', data.name);
         formData.append('slug', data.slug);
@@ -206,7 +207,7 @@ export function AddCategoryDialog({
       } else {
         // Create FormData for new category
         const formData = new FormData();
-        
+
         formData.append('name', data.name);
         formData.append('slug', data.slug);
         if (data.description) {
@@ -224,9 +225,17 @@ export function AddCategoryDialog({
       resetForm();
       onClose();
       onCategorySaved?.();
-    } catch (err: any) {
-      console.error("Error saving category:", err);
-      alert(`Error saving category: ${err.response?.data?.message || err.message}`);
+    } catch (err: unknown) {
+      let errorMessage = "An unknown error occurred";
+
+      if (err instanceof AxiosError) {
+        errorMessage = err.response?.data?.message || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      console.error("Error saving category:", errorMessage);
+      alert(`Error saving category: ${errorMessage}`);
     } finally {
       setIsUploading(false);
     }
@@ -337,7 +346,7 @@ export function AddCategoryDialog({
               <ImageIcon size={16} /> Images
               {images.length > 0 && (
                 <span className="text-xs text-gray-500">
-                  ({images.filter(img => img.type === 'existing').length} existing, 
+                  ({images.filter(img => img.type === 'existing').length} existing,
                   {images.filter(img => img.type === 'new').length} new)
                 </span>
               )}
@@ -346,9 +355,8 @@ export function AddCategoryDialog({
             <div className="flex items-center gap-3">
               <label
                 htmlFor="imageUpload"
-                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${
-                  isUploading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
+                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${isUploading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {isUploading ? "Uploading..." : "Upload Images"}
@@ -382,11 +390,10 @@ export function AddCategoryDialog({
                       className="w-full h-28 object-cover rounded-lg transition-transform group-hover:scale-105"
                     />
                     <div className="absolute top-1 left-1">
-                      <span className={`text-xs px-1 rounded ${
-                        image.type === 'existing' 
-                          ? 'bg-green-500 text-white' 
+                      <span className={`text-xs px-1 rounded ${image.type === 'existing'
+                          ? 'bg-green-500 text-white'
                           : 'bg-blue-500 text-white'
-                      }`}>
+                        }`}>
                         {image.type === 'existing' ? 'Existing' : 'New'}
                       </span>
                     </div>

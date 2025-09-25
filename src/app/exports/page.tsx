@@ -66,7 +66,8 @@ export default function ExportItemPage() {
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (item: IExport) => deleteItem.mutate(item._id);
+const handleDelete = (item: IExport) => deleteItem.mutate(item._id!);
+
 
   const columns: Column<IExport>[] = [
     { key: "country", label: "Country" },

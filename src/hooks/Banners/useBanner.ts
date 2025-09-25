@@ -1,7 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { BannerService } from "@/services/bannerService";
-import { IBannerPayload } from "@/AppComponents/AppBannersDialog";
+import { IBannerPayload } from "@/types/IBannerPayload ";
 
 export const useBanner = (id: string) => {
   return useQuery<IBannerPayload, Error>({

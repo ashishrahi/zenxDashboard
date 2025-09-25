@@ -1,7 +1,7 @@
 "use client";
 
 import axiosInstance from "@/lib/axios";
-import { IBannerPayload } from "@/AppComponents/AppBannersDialog";
+import { IBannerPayload } from "@/types/IBannerPayload ";
 
 export const BannerService = {
   // Fetch all banners

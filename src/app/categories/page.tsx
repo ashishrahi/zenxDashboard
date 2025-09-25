@@ -155,11 +155,12 @@ export default function CategoryPage() {
 
         {/* Add/Edit Dialog */}
         <AddCategoryDialog
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-          onSubmitCategory={handleSubmitCategory}
-          categoryToEdit={selectedCategory || undefined}
-        />
+  isOpen={isDialogOpen}
+  onClose={() => setIsDialogOpen(false)}
+  categoryToEdit={selectedCategory || undefined}
+  onCategorySaved={() => handleSubmitCategory(selectedCategory!)}
+/>
+
       </div>
     </AppContainer>
   );

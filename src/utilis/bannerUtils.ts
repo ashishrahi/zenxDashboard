@@ -1,4 +1,4 @@
-import { IBannerPayload } from "@/types/bannerTypes";
+import { IBannerPayload } from "@/types/IBannerPayload ";
 
 // Filter banners by text
 export const filterBanners = (banners: IBannerPayload[], filterText: string) =>

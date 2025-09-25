@@ -18,14 +18,7 @@ import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 import { useCategories } from "@/hooks/Categories";
 
-export interface ISubcategoryPayload {
-  _id?: string;
-  name: string;
-  slug: string;
-  description?: string;
-  images: string[];
-  categoryId: string;
-}
+
 
 export default function SubcategoryPage() {
   const [filterText, setFilterText] = useState("");
@@ -65,7 +58,7 @@ export default function SubcategoryPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmitSubcategory = (subcategory: ISubcategoryPayload) => {
+  const handleSubmitSubcategory = (subcategory: ISubcategory) => {
     if (subcategory._id) {
       updateSubcategory.mutate(subcategory);
     } else {

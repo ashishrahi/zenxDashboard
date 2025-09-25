@@ -15,15 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Upload, Trash2, XCircle, Image as ImageIcon, Edit3 } from "lucide-react";
 import { AppButton } from "./AppButton";
 import Image from "next/image";
+import { IBannerPayload } from "@/types/IBannerPayload ";
 
-export interface IBannerPayload {
-  _id?: string;
-  title: string;
-  description?: string;
-  image: string;
-  isActive?: boolean;
-  link?: string;
-}
 
 interface AddBannerDialogProps {
   isOpen: boolean;
@@ -49,7 +42,8 @@ export function AddBannerDialog({
       _id: "",
       title: "",
       description: "",
-      image: "",
+      images: null, // ✅ matches IBannerPayload
+      existingImages: [], // optional, good for edit mode
       isActive: true,
     },
   });
@@ -61,11 +55,14 @@ export function AddBannerDialog({
   useEffect(() => {
     if (bannerToEdit) {
       setValue("_id", bannerToEdit._id ?? "");
-      setValue("title", bannerToEdit.title ?? "");
-      setValue("description", bannerToEdit.description ?? "");
-      setValue("image", bannerToEdit.image ?? "");
-      setValue("isActive", bannerToEdit.isActive ?? true);
-      setUploadedImage(bannerToEdit.image ?? "");
+    setValue("title", bannerToEdit.title ?? "");
+    setValue("description", bannerToEdit.description ?? "");
+    setValue("images", null); // editing, files are not preloaded as File[]
+    setValue("existingImages", bannerToEdit.existingImages ?? []);
+    setValue("isActive", bannerToEdit.isActive ?? true);
+
+    // For preview only
+    setUploadedImage(bannerToEdit.existingImages?.[0] ?? "");
     } else {
       reset();
       setUploadedImage("");
@@ -73,29 +70,31 @@ export function AddBannerDialog({
   }, [bannerToEdit, setValue, reset, isOpen]);
 
   // Handle image upload
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+ const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    setIsUploading(true);
-    try {
-      // Replace this with actual Cloudinary or backend upload
-      const uploadedUrl = await new Promise<string>((resolve) =>
-        setTimeout(() => resolve(URL.createObjectURL(file)), 500)
-      );
-      setUploadedImage(uploadedUrl);
-      setValue("image", uploadedUrl);
-    } catch (error) {
-      console.error("Error uploading image:", error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  setIsUploading(true);
+  try {
+    // Generate preview URL for showing the image
+    const uploadedUrl = URL.createObjectURL(file);
+    setUploadedImage(uploadedUrl); // preview only
 
-  const removeImage = () => {
-    setUploadedImage("");
-    setValue("image", "");
-  };
+    // Set the actual File array in the form for submission
+    setValue("images", [file]); // ✅ File[] type
+  } catch (error) {
+    console.error("Error uploading image:", error);
+  } finally {
+    setIsUploading(false);
+  }
+};
+
+
+const removeImage = () => {
+  setUploadedImage("");      // preview URL
+  setValue("images", null);  // form field of type File[] | null
+};
+
 
   const onSubmit = (data: IBannerPayload) => {
     onSubmitBanner(data);
@@ -159,9 +158,8 @@ export function AddBannerDialog({
             <div className="flex items-center gap-3">
               <label
                 htmlFor="imageUpload"
-                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${
-                  isUploading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
+                className={`flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition ${isUploading ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
               >
                 <Upload size={16} />
                 {isUploading ? "Uploading..." : "Upload Image"}
@@ -178,24 +176,24 @@ export function AddBannerDialog({
             </div>
 
             {uploadedImage && (
-  <div className="relative mt-2 w-32 h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
-    <Image
-      src={uploadedImage}
-      alt="banner preview"
-      fill
-      style={{ objectFit: "cover" }}
-      priority={false} // set true if you want preloading
-      sizes="128px" // optional for better optimization
-    />
-    <AppButton
-      type="button"
-      onClick={removeImage}
-      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-70 hover:opacity-100 transition"
-    >
-      <Trash2 size={12} />
-    </AppButton>
-  </div>
-)}
+              <div className="relative mt-2 w-32 h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+                <Image
+                  src={uploadedImage}
+                  alt="banner preview"
+                  fill
+                  style={{ objectFit: "cover" }}
+                  priority={false} // set true if you want preloading
+                  sizes="128px" // optional for better optimization
+                />
+                <AppButton
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-70 hover:opacity-100 transition"
+                >
+                  <Trash2 size={12} />
+                </AppButton>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

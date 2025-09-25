@@ -43,7 +43,9 @@ export interface IProductPayload {
   delivery?: string;
   rating?: number;
   stock: number;
-  images?: File[];              // <-- File[] for upload
+  images?: File[];  
+  createdAt: string;  // add this
+  updatedAt: string;  // if needed            // <-- File[] for upload
 }
 
 

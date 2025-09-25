@@ -33,6 +33,7 @@ interface AddSubcategoryDialogProps {
   subcategoryToEdit?: ISubcategory & { images?: string[] };
   categories: { _id: string; name: string }[];
   onSubcategorySaved?: () => void;
+  onSubmitSubcategory: (subcategory: ISubcategory) => void;
 }
 
 interface ImageState {
