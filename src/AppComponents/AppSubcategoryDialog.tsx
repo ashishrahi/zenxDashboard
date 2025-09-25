@@ -112,10 +112,31 @@ export function AddSubcategoryDialog({
       setValue("description", subcategoryToEdit.description || "");
 
       // Set existing images
-      const existingImages: ImageState[] = (subcategoryToEdit.images || []).map(url => ({
-        url,
-        type: 'existing'
-      }));
+      // Set existing images with proper type checking
+const existingImages: ImageState[] = (subcategoryToEdit.images || []).map(image => {
+  // If image is already a string (URL)
+  if (typeof image === 'string') {
+    return {
+      url: image,
+      type: 'existing' as const
+    };
+  }
+  
+  // If image is a File object, you need to decide how to handle it
+  // Option 1: Convert File to object URL
+  if (image instanceof File) {
+    return {
+      url: URL.createObjectURL(image),
+      type: 'new' as const
+    };
+  }
+  
+  // Fallback for unexpected types
+  return {
+    url: String(image),
+    type: 'existing' as const
+  };
+});
       setImages(existingImages);
 
       // Set categoryId
