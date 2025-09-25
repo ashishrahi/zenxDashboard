@@ -221,7 +221,9 @@ export function AddBannerDialog({
                         <AppButton variant="outline" type="button" onClick={onClose}>
                             <XCircle size={16} /> Cancel
                         </AppButton>
-                        <AppButton type="submit" disabled={isUploading}>
+                        <AppButton type="submit" disabled={isUploading} onClick={(e) => {
+    if (isUploading) e.preventDefault();
+  }}>
                             <Upload size={16} /> {bannerToEdit ? "Update Banner" : "Add Banner"}
                         </AppButton>
                     </DialogFooter>
