@@ -53,15 +53,20 @@ export default function BannerPage() {
     setIsDialogOpen(true);
   };
 
- const handleSubmitBanner = (banner: IBannerPayload) => {
-  if (banner._id) {
-    updateBanner.mutate(banner);
-  } else {
-    // Use type assertion to handle the null case
-    addBanner.mutate(banner as Omit<IBannerPayload, "_id"> & { images?: File[] | undefined });
-  }
-  setIsDialogOpen(false);
-};
+  const handleSubmitBanner = (banner: IBannerPayload) => {
+    // Clean up the images property to remove null before passing to mutations
+    const cleanedBanner = {
+      ...banner,
+      images: banner.images ?? undefined // Convert null to undefined
+    };
+
+    if (cleanedBanner._id) {
+      updateBanner.mutate(cleanedBanner);
+    } else {
+      addBanner.mutate(cleanedBanner as Omit<IBannerPayload, "_id"> & { images?: File[] | undefined });
+    }
+    setIsDialogOpen(false);
+  };
 
   const handleDelete = (banner: IBannerPayload) => {
     if (!banner._id) return;
@@ -109,7 +114,7 @@ export default function BannerPage() {
           <AddBannerDialog
             isOpen={isDialogOpen}
             onClose={() => setIsDialogOpen(false)}
-            onBannerSaved={handleSubmitBanner} // ✅ fixed
+            onBannerSaved={handleSubmitBanner}
             bannerToEdit={selectedBanner || undefined}
           />
         </div>
