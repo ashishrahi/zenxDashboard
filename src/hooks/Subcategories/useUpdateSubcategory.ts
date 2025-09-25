@@ -18,10 +18,12 @@ export const useUpdateSubcategory = () => {
       formData.append("description", updatedSubcategory.description || "");
       formData.append("categoryId", updatedSubcategory.categoryId);
 
-      // If images are File[], append them
-      updatedSubcategory.images.forEach((file) => {
-        formData.append("images", file);
-      });
+      // Handle images safely
+      if (updatedSubcategory.images) {
+        updatedSubcategory.images.forEach((file) => {
+          formData.append("images", file);
+        });
+      }
 
       return SubcategoryService.update(updatedSubcategory._id, formData);
     },

@@ -8,14 +8,15 @@ export const useAddSubcategory = () => {
 
   return useMutation<ISubcategory, Error, Omit<ISubcategory, "_id">>({
     mutationFn: (newSubcategory) => {
-      // Convert to FormData
       const formData = new FormData();
       formData.append("name", newSubcategory.name || "");
       formData.append("slug", newSubcategory.slug || "");
       formData.append("description", newSubcategory.description || "");
       formData.append("categoryId", newSubcategory.categoryId);
-      newSubcategory.images.forEach((file) => {
-        formData.append("images", file); // assumes images are File[]
+      
+      // Safe handling with optional chaining
+      newSubcategory.images?.forEach((file) => {
+        formData.append("images", file);
       });
 
       return SubcategoryService.create(formData);
