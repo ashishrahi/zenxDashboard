@@ -8,6 +8,7 @@ interface HeaderActionsProps {
   setFilterText: (value: string) => void;
   onAddClick?: () => void;
   title: string;
+  searchText?:string;
 
 }
 
@@ -16,6 +17,7 @@ const AppHeaderActions: React.FC<HeaderActionsProps> = ({
   setFilterText,
   onAddClick,
   title,
+  searchText
 }) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
@@ -32,7 +34,7 @@ const AppHeaderActions: React.FC<HeaderActionsProps> = ({
 
       {/* Filter */}
       <div className="w-full sm:w-1/3">
-        <ProductFilter filterText={filterText} setFilterText={setFilterText} />
+        <ProductFilter filterText={filterText} setFilterText={setFilterText} searchText = {searchText} />
       </div>
     </div>
   );

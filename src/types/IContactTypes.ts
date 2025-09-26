@@ -7,4 +7,5 @@ export interface IContact {
   phone?: string;
   timing?: string;
   colspan?: number;
+  
 }

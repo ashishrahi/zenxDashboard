@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CountryService } from "@/services/countryService"; // Make sure this exists
-import { ICountry } from "@/types/countryTypes";
+import { CountryService } from "@/services/countryService";
+import { ICountryPayload } from "@/types/ICountryTypes";
 
 export const useUpdateCountry = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<ICountry, Error, ICountry>({
-    mutationFn: (updatedCountry: ICountry) =>
-      CountryService.update(updatedCountry._id!, updatedCountry),
+  return useMutation<ICountryPayload, Error, ICountryPayload>({
+    mutationFn: (updatedCountry: ICountryPayload) => 
+      CountryService.update(updatedCountry), // only 1 argument
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["countries"] });
     },

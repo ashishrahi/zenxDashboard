@@ -1,34 +1,24 @@
-// services/countryService.ts
 import axiosInstance from "@/lib/axios";
-import { ICountry } from "@/types/countryTypes";
+import { ICountryPayload } from "@/types/ICountryTypes";
 
 export const CountryService = {
-  // Fetch all countries
-  getAll: async (): Promise<ICountry[]> => {
+  getAll: async (): Promise<ICountryPayload[]> => {
     const { data } = await axiosInstance.get("/countries");
-    return data;
+    return data?.data;
   },
 
-  // Fetch a single country by ID
-  getById: async (id: string): Promise<ICountry> => {
-    const { data } = await axiosInstance.get(`/countries/${id}`);
-    return data;
+  create: async (country: Omit<ICountryPayload, "_id">): Promise<ICountryPayload> => {
+    const { data } = await axiosInstance.post("/countries/create", country);
+    return data?.data;
   },
 
-  // Create a new country
-  create: async (country: Omit<ICountry, "id">): Promise<ICountry> => {
-    const { data } = await axiosInstance.post("/countries", country);
-    return data;
+  update: async (country: ICountryPayload): Promise<ICountryPayload> => {
+    if (!country._id) throw new Error("Country _id is required for update");
+    const { data } = await axiosInstance.put(`/countries/update/${country._id}`, country);
+    return data?.data;
   },
 
-  // Update an existing country
-  update: async (id: string, country: Partial<ICountry>): Promise<ICountry> => {
-    const { data } = await axiosInstance.put(`/countries/${id}`, country);
-    return data;
-  },
-
-  // Delete a country by ID
   delete: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/countries/${id}`);
+    await axiosInstance.delete(`/countries/delete/${id}`);
   },
 };
