@@ -81,10 +81,8 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
               { name: "Country", href: "/countries" },
               { name: "State", href: "/states" },
               { name: "City", href: "/cities" },
-              { name: "Faq", href: "/faqs" },
-              { name: "Blog", href: "/blogs" },
-              { name: "Export", href: "/exports" },
-              { name: "History", href: "/histories" },
+              
+              
             ]}
           />
 
@@ -150,31 +148,37 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
           />
 
            <SidebarSection
-            title="CONTACTS"
-            icon={<BoxesIcon className="w-4 h-4" />}
-            isCollapsed={isCollapsed}
-            items={[
-              { name: "Contacts", href: "/contacts" },
-              // { name: "Active", href: "/active" },
-            ]}
-          />
-
-           <SidebarSection
             title="EXPORTS"
             icon={<BoxesIcon className="w-4 h-4" />}
             isCollapsed={isCollapsed}
             items={[
               { name: "Export", href: "/exports" },
-              // { name: "Active", href: "/active" },
             ]}
           />
+     <SidebarSection
+            title="BLOGS"
+            icon={<BoxesIcon className="w-4 h-4" />}
+            isCollapsed={isCollapsed}
+            items={[
+             { name: "Blog", href: "/blogs" },
+            ]}
+          />
+
+
+              
+
+
              <SidebarSection
-            title="ENQUIRE"
+            title="UTILITIES"
             icon={<BoxesIcon className="w-4 h-4" />}
             isCollapsed={isCollapsed}
             items={[
               { name: "Equire", href: "/enquire" },
-              // { name: "Active", href: "/active" },
+              { name: "Contacts", href: "/contacts" },
+              { name: "Export", href: "/exports" },
+              { name: "History", href: "/histories" },
+              { name: "Faq", href: "/faqs" },
+
             ]}
           />
         </nav>

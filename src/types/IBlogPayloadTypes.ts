@@ -1,4 +1,4 @@
-export interface IBlog {
+export interface IBlogPayload  {
   _id: string;
   title: string;
   category: string;
