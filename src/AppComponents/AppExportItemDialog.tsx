@@ -13,14 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppButton } from "./AppButton";
 import { XCircle, Edit3 } from "lucide-react";
-import Image from "next/image";
 import { IExport } from "@/types/IExportItem";
-
+import { useCountries } from "@/hooks/Countries";
 
 interface AddExportItemDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmitItem: (item: IExport) => void;
+  onSubmitItem: (item: Omit<IExport, "_id"> & { _id?: string }) => void;
   itemToEdit?: IExport;
 }
 
@@ -30,46 +29,57 @@ export function AddExportItemDialog({
   onSubmitItem,
   itemToEdit,
 }: AddExportItemDialogProps) {
+  const { data: countries = [] } = useCountries();
+
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<IExport>({
     defaultValues: {
-      _id: "",
-      country: "",
+      // Remove _id from default values for new items
+      countryId: "",
       code: "",
-      flag: undefined,
       volume: "",
       category: "",
       isActive: true,
     },
   });
 
-  const flagValue = watch("flag");
-
   useEffect(() => {
     if (itemToEdit) {
-      setValue("_id", itemToEdit._id ?? "");
-      setValue("country", itemToEdit.country ?? "");
+      // Only set _id when editing an existing item
+      setValue("_id", itemToEdit._id);
+      setValue("countryId", itemToEdit.countryId ?? "");
       setValue("code", itemToEdit.code ?? "");
-      setValue("flag", itemToEdit.flag ?? undefined);
       setValue("volume", itemToEdit.volume ?? "");
       setValue("category", itemToEdit.category ?? "");
       setValue("isActive", itemToEdit.isActive ?? true);
     } else {
-      reset();
+      // Clear form for new items (without _id)
+      reset({
+        countryId: "",
+        code: "",
+        volume: "",
+        category: "",
+        isActive: true,
+      });
     }
   }, [itemToEdit, setValue, reset, isOpen]);
 
   const onSubmit = (data: IExport) => {
-    onSubmitItem(data);
-    reset();
-    onClose();
+  // For new items, ensure _id is undefined, for edits keep the _id
+  const submitData = {
+    ...data,
+    _id: itemToEdit ? data._id : undefined
   };
+  
+  onSubmitItem(submitData);
+  reset();
+  onClose();
+};
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -87,66 +97,79 @@ export function AddExportItemDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 py-4">
-          <input type="hidden" {...register("_id")} />
-
           {/* Country */}
           <div className="space-y-2">
-            <Label htmlFor="country">Country</Label>
-            <Input
-              id="country"
-              {...register("country", { required: "Country is required" })}
-              placeholder="Enter country"
-            />
-            {errors.country && <p className="text-red-500 text-xs">{errors.country.message}</p>}
+            <Label htmlFor="countryId" className="text-gray-700 dark:text-gray-200">
+              Country
+            </Label>
+            <select
+              id="countryId"
+              {...register("countryId", { required: "Country is required" })}
+              className="w-full px-3 py-2 border rounded-md text-gray-900 dark:text-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700"
+            >
+              <option value="">Select a country</option>
+              {countries.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {errors.countryId && (
+              <p className="text-red-500 text-xs">{errors.countryId.message}</p>
+            )}
           </div>
 
           {/* Code */}
           <div className="space-y-2">
-            <Label htmlFor="code">Code</Label>
+            <Label htmlFor="code" className="text-gray-700 dark:text-gray-200">
+              Code
+            </Label>
             <Input
               id="code"
               {...register("code", { required: "Code is required" })}
               placeholder="Enter code"
+              className="text-gray-900 dark:text-gray-100"
             />
             {errors.code && <p className="text-red-500 text-xs">{errors.code.message}</p>}
           </div>
 
-          {/* Flag */}
-          <div className="space-y-2">
-            <Label htmlFor="flag">Flag</Label>
-            <Input
-              id="flag"
-              type="file"
-              accept="image/*"
-              {...register("flag")}
-            />
-            {flagValue && typeof flagValue !== "string" && (
-              <Image
-                width={200}
-                height={200}
-                src={URL.createObjectURL(flagValue as File)}
-                alt="Flag preview"
-                className="w-16 h-10 mt-2 object-cover rounded"
-              />
-            )}
-          </div>
-
           {/* Volume */}
           <div className="space-y-2">
-            <Label htmlFor="volume">Volume</Label>
-            <Input id="volume" {...register("volume")} placeholder="Enter volume" />
+            <Label htmlFor="volume" className="text-gray-700 dark:text-gray-200">
+              Volume
+            </Label>
+            <Input
+              id="volume"
+              {...register("volume")}
+              placeholder="Enter volume"
+              className="text-gray-900 dark:text-gray-100"
+            />
           </div>
 
           {/* Category */}
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Input id="category" {...register("category")} placeholder="Enter category" />
+            <Label htmlFor="category" className="text-gray-700 dark:text-gray-200">
+              Category
+            </Label>
+            <Input
+              id="category"
+              {...register("category")}
+              placeholder="Enter category"
+              className="text-gray-900 dark:text-gray-100"
+            />
           </div>
 
-          {/* IsActive */}
-          <div className="space-y-2">
-            <Label htmlFor="isActive">Active</Label>
-            <Input id="isActive" type="checkbox" {...register("isActive")} />
+          {/* IsActive - Fixed checkbox styling */}
+          <div className="space-y-2 flex items-center gap-2">
+            <input 
+              id="isActive" 
+              type="checkbox" 
+              {...register("isActive")} 
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <Label htmlFor="isActive" className="text-gray-700 dark:text-gray-200 cursor-pointer">
+              Active
+            </Label>
           </div>
 
           {/* Action Buttons */}

@@ -2,10 +2,10 @@
 import { useState } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import { AddExportItemDialog } from "@/AppComponents/AppExportItemDialog"; // similar to AddContactDialog
+import { AddExportItemDialog } from "@/AppComponents/AppExportItemDialog";
 import { ShadCNPagination } from "@/AppComponents/AppPagination";
 import AppHeaderActions from "@/AppComponents/AppHeaderActions";
-import { IExport } from "@/types/IExportItem"; // define interface below
+import { IExport } from "@/types/IExportItem";
 
 import {
   useExportItems,
@@ -15,7 +15,7 @@ import {
 } from "@/hooks/ExportItems/index"; 
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
-import Image from "next/image";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 // Column type
 export interface Column<RowType> {
@@ -23,7 +23,6 @@ export interface Column<RowType> {
   label: string;
   render?: (row: RowType) => React.ReactNode;
 }
-
 
 export default function ExportItemPage() {
   const [filterText, setFilterText] = useState("");
@@ -38,7 +37,7 @@ export default function ExportItemPage() {
   const deleteItem = useDeleteExportItem();
 
   const filteredItems = items.filter((c) =>
-    c.country.toLowerCase().includes(filterText.toLowerCase())
+    c?.country?.toLowerCase()?.includes(filterText.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredItems.length / pageSize);
@@ -57,26 +56,27 @@ export default function ExportItemPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmitItem = (item: IExport) => {
-    if (item._id) {
-      updateItem.mutate(item);
-    } else {
-      addItem.mutate(item);
-    }
-    setIsDialogOpen(false);
+ // Update your handleSubmitItem to accept the dialog's type
+const handleSubmitItem = (item: Omit<IExport, "_id"> & { _id?: string }) => {
+  // Convert to IExport with proper _id handling
+  const exportItem: IExport = {
+    ...item,
+    _id: item._id || '' // Fallback to empty string
   };
+  
+  if (exportItem._id) {
+    updateItem.mutate(exportItem);
+  } else {
+    addItem.mutate(exportItem);
+  }
+  setIsDialogOpen(false);
+};
 
-const handleDelete = (item: IExport) => deleteItem.mutate(item._id!);
-
+  const handleDelete = (item: IExport) => deleteItem.mutate(item._id!);
 
   const columns: Column<IExport>[] = [
     { key: "country", label: "Country" },
     { key: "code", label: "Code" },
-    {
-      key: "flag",
-      label: "Flag",
-      render: (row) => <Image width={200} height={200} src={`/flags/${row.flag}`} alt={row.country} className="w-6 h-4" />,
-    },
     { key: "volume", label: "Volume" },
     { key: "category", label: "Category" },
     {
@@ -97,6 +97,7 @@ const handleDelete = (item: IExport) => deleteItem.mutate(item._id!);
   ];
 
   return (
+    <AppProtectedRoute>
     <AppContainer>
       <div className="p-3 grid gap-6">
         <AppHeaderActions
@@ -144,5 +145,6 @@ const handleDelete = (item: IExport) => deleteItem.mutate(item._id!);
         />
       </div>
     </AppContainer>
+    </AppProtectedRoute>
   );
 }

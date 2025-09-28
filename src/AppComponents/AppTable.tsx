@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Eye, Edit, Trash2 } from "lucide-react";
 
 // Column interface
 export interface Column<RowType> {
@@ -23,24 +24,25 @@ export interface GlobalTableProps<RowType extends { _id: string }> {
   data?: RowType[]; // optional, can be undefined initially
   onEdit?: (row: RowType) => void;
   onDelete?: (row: RowType) => void;
+  onView?: (row: RowType) => void; // optional view callback
   title?: string;
 }
 
 export function GlobalTable<RowType extends { _id: string }>({
   columns,
-  data = [], // default to empty array
+  data = [],
   onEdit,
   onDelete,
+  onView,
   title,
 }: GlobalTableProps<RowType>) {
   const [mounted, setMounted] = useState(false);
 
-  // Ensure the component only renders on the client to avoid SSR hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null; // render nothing on server
+  if (!mounted) return null;
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-2xl p-1 w-full">
@@ -58,7 +60,7 @@ export function GlobalTable<RowType extends { _id: string }>({
                 {col.label ?? ""}
               </TableHead>
             ))}
-            {(onEdit || onDelete) && <TableHead>Actions</TableHead>}
+            {(onEdit || onDelete || onView) && <TableHead>Actions</TableHead>}
           </TableRow>
         </TableHeader>
 
@@ -74,23 +76,40 @@ export function GlobalTable<RowType extends { _id: string }>({
                 </TableCell>
               ))}
 
-              {(onEdit || onDelete) && (
-                <TableCell>
+              {(onEdit || onDelete || onView) && (
+                <TableCell className="flex gap-2">
+                  {onView && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onView(row)}
+                      title="View"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  )}
                   {onEdit && (
-                    <Button size="sm" onClick={() => onEdit(row)}>
-                      Edit
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onEdit(row)}
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4 text-green-600" />
                     </Button>
                   )}
                   {onDelete && (
                     <Button
                       size="sm"
-                      variant="destructive"
-                      className="ml-2"
+                      variant="ghost" // transparent background
                       onClick={() => onDelete(row)}
+                      title="Delete"
+                      className="hover:bg-red-100 dark:hover:bg-red-900 p-1" // optional hover effect
                     >
-                      Delete
+                      <Trash2 className="w-4 h-4 text-red-600" /> {/* red icon */}
                     </Button>
                   )}
+
                 </TableCell>
               )}
             </TableRow>

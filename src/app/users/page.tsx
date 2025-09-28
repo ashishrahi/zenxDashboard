@@ -11,6 +11,7 @@ import { useUsers, useDeleteUser } from "@/hooks/Users";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 import { IUserPayload } from "@/types/IUserPayload";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 // Column type
 export interface Column<RowType> {
@@ -48,8 +49,8 @@ export default function UserPage() {
           typeof u.address === "string"
             ? u.address
             : u.address?.street || "N/A",
-         createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })),
     [users]
   );
@@ -92,46 +93,48 @@ export default function UserPage() {
   ];
 
   return (
-    <AppContainer>
-      <div className="p-3 grid gap-6">
-        {/* Header Actions */}
-        <AppHeaderActions
-          title="Add User"
-          filterText={filterText}
-          setFilterText={setFilterText}
-        />
+    <AppProtectedRoute>
 
-        {/* Table */}
-        <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
-            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-          }`}
-        >
-          {isLoading ? (
-            <TableSkeleton rows={pageSize} />
-          ) : (
-            <GlobalTable<IUserPayload>
-              columns={columns}
-              data={paginatedUsers}
-              onDelete={handleDelete}
+      <AppContainer>
+        <div className="p-3 grid gap-6">
+          {/* Header Actions */}
+          <AppHeaderActions
+            title="Add User"
+            filterText={filterText}
+            setFilterText={setFilterText}
+          />
+
+          {/* Table */}
+          <div
+            className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+              }`}
+          >
+            {isLoading ? (
+              <TableSkeleton rows={pageSize} />
+            ) : (
+              <GlobalTable<IUserPayload>
+                columns={columns}
+                data={paginatedUsers}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
+
+          {/* Bottom Controls */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
+            <PageSizeSelector
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              setCurrentPage={setCurrentPage}
             />
-          )}
+            <ShadCNPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </div>
-
-        {/* Bottom Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
-          <PageSizeSelector
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            setCurrentPage={setCurrentPage}
-          />
-          <ShadCNPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      </div>
-    </AppContainer>
+      </AppContainer>
+    </AppProtectedRoute>
   );
 }

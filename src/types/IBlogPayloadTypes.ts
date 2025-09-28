@@ -1,12 +1,15 @@
-export interface IBlogPayload  {
+// types/IBlogPayloadTypes.ts
+export interface IBlogPayload {
   _id: string;
   title: string;
+  description: string;
   category: string;
   content: string;
-  publishedDate: string;
-  author: string; // add this
-  description?: string;
-  link?: string;
-  image?: string;
+  images?: string[]; // URLs from backend
   tags?: string[];
+  author?: string;
+  createdAt: string;
+  updatedAt: string;
+  message:string;
+  success?:string;
 }

@@ -10,7 +10,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -72,7 +71,6 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
   const { register, handleSubmit, reset, setValue, watch, control, formState: { errors } } = useForm<IProductPayload>({
     defaultValues: {
       name: "",
-      slug: "",
       price: 0,
       description: "",
       categoryId: "",
@@ -114,10 +112,7 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
   // Populate form when editing
   useEffect(() => {
     if (productToEdit && isOpen) {
-      // Reset form first
       reset();
-      
-      // Set basic fields
       Object.keys(productToEdit).forEach((key) => {
         if (key !== "variants") {
           const value = productToEdit[key as keyof IProductPayload];
@@ -125,46 +120,25 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
         }
       });
 
-      // Handle variants with images
       const variantsWithImages = productToEdit.variants?.map((v) => ({
         ...v,
         images: v.images || [],
       })) || [];
 
       setValue("variants", variantsWithImages);
-      
-      // Store existing images separately (URLs from server)
-      const existing = variantsWithImages.map(variant => variant.images || []);
-      setExistingImages(existing);
-      
-      // Initialize variantFiles with empty arrays for each variant
+      setExistingImages(variantsWithImages.map(v => v.images || []));
       setVariantFiles(variantsWithImages.map(() => []));
-      
-      // Initialize deleted images array
       setDeletedImages(variantsWithImages.map(() => []));
 
-      // Sync colors from variants
       const variantColors = variantsWithImages.map((v) => v.color?.trim()).filter(Boolean);
       setValue("colors", Array.from(new Set(variantColors)));
     } else if (!productToEdit && isOpen) {
-      // Reset for new product
       reset();
       setVariantFiles([]);
       setExistingImages([]);
       setDeletedImages([]);
     }
   }, [productToEdit, setValue, reset, isOpen]);
-
-  const generateSlugFromName = (name: string) =>
-    name?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ?? "";
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    setValue("name", name);
-    if (!productToEdit?.slug || watch("slug") === generateSlugFromName(watch("name"))) {
-      setValue("slug", generateSlugFromName(name));
-    }
-  };
 
   const variants = watch("variants");
   useEffect(() => {
@@ -174,16 +148,10 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
 
   const handleVariantImageUpload = (variantIndex: number, files: FileList) => {
     if (!files) return;
-    
+
     const blobUrls = Array.from(files).map((file) => URL.createObjectURL(file));
     const updatedVariants = [...watch("variants")];
-    
-    // Keep existing images and add new ones
-    updatedVariants[variantIndex].images = [
-      ...(updatedVariants[variantIndex].images || []),
-      ...blobUrls,
-    ];
-    
+    updatedVariants[variantIndex].images = [...(updatedVariants[variantIndex].images || []), ...blobUrls];
     setValue("variants", updatedVariants);
 
     setVariantFiles((prev) => {
@@ -196,25 +164,19 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
   const removeVariantImage = (variantIndex: number, imageIndex: number) => {
     const updatedVariants = [...watch("variants")];
     const currentImages = updatedVariants[variantIndex].images || [];
-    
-    // Check if this is an existing image (from server)
+
     const existingImagesCount = existingImages[variantIndex]?.length || 0;
     const isExistingImage = imageIndex < existingImagesCount;
 
     if (isExistingImage) {
-      // For existing images, mark for deletion but keep track
       const imageUrl = currentImages[imageIndex];
       setDeletedImages(prev => {
         const copy = [...prev];
         if (!copy[variantIndex]) copy[variantIndex] = [];
-        // Only add if not already marked for deletion
-        if (!copy[variantIndex].includes(imageUrl)) {
-          copy[variantIndex].push(imageUrl);
-        }
+        if (!copy[variantIndex].includes(imageUrl)) copy[variantIndex].push(imageUrl);
         return copy;
       });
     } else {
-      // For new images, remove completely from files
       const adjustedIndex = imageIndex - existingImagesCount;
       setVariantFiles((prev) => {
         const copy = [...prev];
@@ -222,27 +184,18 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
         return copy;
       });
     }
-    
-    // Remove the image from display
+
     updatedVariants[variantIndex].images = currentImages.filter((_, idx) => idx !== imageIndex);
     setValue("variants", updatedVariants);
   };
 
-  // Check if image is an existing one from server
   const isExistingImage = (variantIndex: number, imageIndex: number) => {
     return imageIndex < (existingImages[variantIndex]?.length || 0);
   };
 
-  // Check if image is marked for deletion
-  // const isImageMarkedForDeletion = (variantIndex: number, imageUrl: string) => {
-  //   return deletedImages[variantIndex]?.includes(imageUrl) || false;
-  // };
-
-  // Get images that should be displayed (non-deleted ones)
   const getDisplayImages = (variantIndex: number) => {
     const currentImages = watch("variants")[variantIndex]?.images || [];
     const deleted = deletedImages[variantIndex] || [];
-    
     return currentImages.filter(img => !deleted.includes(img));
   };
 
@@ -273,16 +226,13 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
   };
 
   const onSubmit = async (data: IProductPayload) => {
-    if (!data.name || !data.slug || !data.categoryId || !data.subcategoryId) {
+    if (!data.name || !data.categoryId || !data.subcategoryId) {
       alert("Please fill all required fields");
       return;
     }
 
     const formData = new FormData();
-    
-    // Append basic fields
     formData.append("name", data.name);
-    formData.append("slug", data.slug);
     formData.append("price", data.price.toString());
     formData.append("stock", data.stock.toString());
     formData.append("description", data.description || "");
@@ -294,23 +244,16 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
     formData.append("rating", (data.rating || 0).toString());
     formData.append("sizes", JSON.stringify(data.sizes || []));
     formData.append("colors", JSON.stringify(data.colors || []));
-    
-    // Handle variants - send existing images and mark deletions
+
     const variantsData = data.variants?.map((variant, index) => ({
       color: variant.color,
       stock: variant.stock,
-      // For existing images, only include those not marked for deletion
-      existingImages: existingImages[index]?.filter(img => 
-        !deletedImages[index]?.includes(img)
-      ) || [],
+      existingImages: existingImages[index]?.filter(img => !deletedImages[index]?.includes(img)) || [],
     })) || [];
-    
+
     formData.append("variants", JSON.stringify(variantsData));
-    
-    // Append deleted images information for the backend
     formData.append("deletedImages", JSON.stringify(deletedImages));
-    
-    // Append new variant images
+
     variantFiles.forEach((files, variantIndex) => {
       files.forEach((file) => {
         formData.append(`variantImages[${variantIndex}]`, file);
@@ -349,15 +292,8 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
           {/* Name */}
           <div className="space-y-2">
             <Label>Product Name *</Label>
-            <Input {...register("name", { required: "Product name required" })} onChange={handleNameChange} placeholder="Enter product name" />
+            <Input {...register("name", { required: "Product name required" })} placeholder="Enter product name" />
             {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
-          </div>
-
-          {/* Slug */}
-          <div className="space-y-2">
-            <Label>URL Slug *</Label>
-            <Input {...register("slug", { required: "Slug required" })} placeholder="Auto-generated from name" />
-            {errors.slug && <p className="text-red-500 text-xs">{errors.slug.message}</p>}
           </div>
 
           {/* Price */}
@@ -507,10 +443,7 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
                     <Label>Stock *</Label>
                     <Input 
                       type="number" 
-                      {...register(`variants.${index}.stock`, { 
-                        required: "Variant stock required",
-                        min: { value: 0, message: "Stock must be positive" }
-                      })} 
+                      {...register(`variants.${index}.stock`, { required: "Stock required", min: { value: 0, message: "Stock must be positive" } })} 
                       placeholder="Stock quantity" 
                     />
                     {errors.variants?.[index]?.stock && (
@@ -519,60 +452,31 @@ export function AddProductDialog({ isOpen, onClose, productToEdit }: AddProductD
                   </div>
                 </div>
 
+                {/* Images */}
                 <div className="space-y-2">
-                  <Label>Variant Images</Label>
-                  <Input 
-                    type="file" 
-                    multiple 
-                    accept="image/*" 
-                    onChange={(e) => handleVariantImageUpload(index, e.target.files!)} 
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {variantFiles[index]?.length || 0} new file(s), {existingImages[index]?.length || 0} existing image(s)
-                    {deletedImages[index]?.length > 0 && `, ${deletedImages[index]?.length} marked for deletion`}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {getDisplayImages(index).map((img, imgIdx) => (
-                    <div key={imgIdx} className="relative w-24 h-24 border border-border rounded-md overflow-hidden">
-                      <Image src={img} alt={`Variant ${index} Image ${imgIdx}`} width={96} height={96} className="object-cover w-full h-full" />
-                      <div className="absolute top-1 right-1 flex gap-1">
-                        {isExistingImage(index, imgIdx) && (
-                          <span className="bg-green-500 text-white text-xs px-1 rounded">Existing</span>
-                        )}
-                        <button 
-                          type="button" 
-                          onClick={() => removeVariantImage(index, imgIdx)} 
-                          className="bg-red-600 text-white rounded-full p-1"
-                        >
-                          <XCircle size={14} />
-                        </button>
+                  <Label>Images</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {getDisplayImages(index).map((img, imgIdx) => (
+                      <div key={imgIdx} className="relative w-20 h-20 rounded overflow-hidden border border-border">
+                        <Image src={img} alt={`Variant ${index} image`} fill className="object-cover" />
+                        <Button type="button" size="icon" variant="destructive" className="absolute top-1 right-1 p-1" onClick={() => removeVariantImage(index, imgIdx)}>
+                          <Trash2 size={14} />
+                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                    <Input type="file" multiple accept="image/*" onChange={(e) => handleVariantImageUpload(index, e.target.files!)} className="border border-border rounded p-1" />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Description */}
-          <div className="space-y-2 md:col-span-2">
-            <Label>Description</Label>
-            <Textarea {...register("description")} placeholder="Product description" className="min-h-[120px]" />
-          </div>
-
-          {/* Submit Button */}
-          <DialogFooter className="mt-4 flex justify-end gap-3 md:col-span-2">
-            <Button variant="outline" type="button" onClick={onClose}>
-              <XCircle size={16} className="mr-2" /> Cancel
-            </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              {productToEdit ? "Update Product" : "Add Product"}
-            </Button>
-          </DialogFooter>
-
         </form>
+
+        <DialogFooter className="pt-4 border-t border-border flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="button" onClick={handleSubmit(onSubmit)}>{productToEdit ? "Update" : "Add"} Product</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

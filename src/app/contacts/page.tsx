@@ -15,6 +15,7 @@ import {
 } from "@/hooks/Contacts/index"; // similar hooks as Banners
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 // Column type
 export interface Column<RowType> {
@@ -80,56 +81,58 @@ export default function ContactPage() {
   ];
 
   return (
-    <AppContainer>
-      <div className="p-3 grid gap-6">
-        {/* Header Actions */}
-        <AppHeaderActions
-          title="Add Contact"
-          filterText={filterText}
-          setFilterText={setFilterText}
-          onAddClick={openAddDialog}
-        />
+    <AppProtectedRoute>
 
-        {/* Table */}
-        <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
-            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-          }`}
-        >
-          {isLoading ? (
-            <TableSkeleton rows={pageSize} />
-          ) : (
-            <GlobalTable<IContact>
-              columns={columns}
-              data={paginatedContacts}
-              onEdit={openEditDialog}
-              onDelete={handleDelete}
+      <AppContainer>
+        <div className="p-3 grid gap-6">
+          {/* Header Actions */}
+          <AppHeaderActions
+            title="Add Contact"
+            filterText={filterText}
+            setFilterText={setFilterText}
+            onAddClick={openAddDialog}
+          />
+
+          {/* Table */}
+          <div
+            className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+              }`}
+          >
+            {isLoading ? (
+              <TableSkeleton rows={pageSize} />
+            ) : (
+              <GlobalTable<IContact>
+                columns={columns}
+                data={paginatedContacts}
+                onEdit={openEditDialog}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
+
+          {/* Bottom Controls */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
+            <PageSizeSelector
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              setCurrentPage={setCurrentPage}
             />
-          )}
-        </div>
+            <ShadCNPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
 
-        {/* Bottom Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
-          <PageSizeSelector
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            setCurrentPage={setCurrentPage}
-          />
-          <ShadCNPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
+          {/* Add/Edit Dialog */}
+          <AddContactDialog
+            isOpen={isDialogOpen}
+            onClose={() => setIsDialogOpen(false)}
+            onSubmitContact={handleSubmitContact}
+            contactToEdit={selectedContact || undefined}
           />
         </div>
-
-        {/* Add/Edit Dialog */}
-        <AddContactDialog
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-          onSubmitContact={handleSubmitContact}
-          contactToEdit={selectedContact || undefined}
-        />
-      </div>
-    </AppContainer>
+      </AppContainer>
+    </AppProtectedRoute>
   );
 }

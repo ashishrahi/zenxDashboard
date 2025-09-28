@@ -10,7 +10,6 @@ export interface ICategory {
 export interface ICategoryPayload {
    _id: string;       // Required for database objects
   name: string;
-  slug: string;
   description?: string;
   images: string[];  // Must match ICategoryPayload
   gender?: string;

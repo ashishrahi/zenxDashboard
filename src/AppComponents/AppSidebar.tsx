@@ -81,6 +81,8 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
               { name: "Country", href: "/countries" },
               { name: "State", href: "/states" },
               { name: "City", href: "/cities" },
+              { name: "Gender", href: "/genders" },
+
               
               
             ]}
@@ -175,7 +177,6 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
             items={[
               { name: "Equire", href: "/enquire" },
               { name: "Contacts", href: "/contacts" },
-              { name: "Export", href: "/exports" },
               { name: "History", href: "/histories" },
               { name: "Faq", href: "/faqs" },
 

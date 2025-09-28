@@ -1,32 +1,47 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import AddBlogDialog  from "@/AppComponents/AppBlogDialog";
 import { ShadCNPagination } from "@/AppComponents/AppPagination";
 import AppHeaderActions from "@/AppComponents/AppHeaderActions";
-
 import {
   useBlogs,
-  useAddBlog,
-  useUpdateBlog,
   useDeleteBlog,
 } from "@/hooks/Blog";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 import { IBlogPayload } from "@/types/IBlogPayloadTypes";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+
+interface Column<T> {
+  key: keyof T;  // This ensures key must be a property of T
+  label: string;
+  render?: (row: T) => React.ReactNode;
+}
+
+
 
 export default function BlogPage() {
+  const router = useRouter();
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedBlog, setSelectedBlog] = useState<IBlogPayload | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState<IBlogPayload | null>(null);
 
   const { data: blogs = [], isLoading } = useBlogs();
-  const addBlog = useAddBlog();
-  const updateBlog = useUpdateBlog();
   const deleteBlog = useDeleteBlog();
 
   const filteredBlogs = blogs.filter((b) =>
@@ -39,95 +54,107 @@ export default function BlogPage() {
     currentPage * pageSize
   );
 
-  // Dialog open functions
-  const openAddDialog = () => {
-    setSelectedBlog(null);
-    setIsDialogOpen(true);
+  // // Navigation functions
+  // const handleViewBlog = (blog: IBlogPayload) => {
+  //   router.push(`/blogs/${blog._id}`);
+  // };
+
+  const handleEditBlog = (blog: IBlogPayload) => {
+    router.push(`/blogs/${blog._id}`);
   };
 
-  const openEditDialog = (blog: IBlogPayload) => {
-    setSelectedBlog(blog);
-    setIsDialogOpen(true);
+  const handleAddBlog = () => {
+    router.push("/blogs/new");
   };
 
-  // Submit blog
-  const handleSubmitBlog = (blog: IBlogPayload) => {
-    if (blog._id) {
-      updateBlog.mutate(blog);
-    } else {
-      addBlog.mutate(blog);
+  // Delete blog functions
+  const handleDeleteClick = (blog: IBlogPayload) => {
+    setBlogToDelete(blog);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (blogToDelete) {
+      deleteBlog.mutate(blogToDelete._id);
     }
-    setIsDialogOpen(false);
+    setDeleteDialogOpen(false);
+    setBlogToDelete(null);
   };
 
-  // Delete blog
-  const handleDelete = (blog: IBlogPayload) => deleteBlog.mutate(blog._id);
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setBlogToDelete(null);
+  };
 
-  // Table columns
-  const columns = [
-    { key: "title", label: "Title" },
-    {
-      key: "content",
-      label: "Content",
-      render: (row: IBlogPayload) =>
-        row.content.length > 50 ? row.content.slice(0, 50) + "..." : row.content,
-    },
-    { key: "tags", label: "Tags", render: (row: IBlogPayload) => row.tags?.join(", ") || "No tags" },
-    {
-      key: "images",
-      label: "Images",
-      render: (row: IBlogPayload) => row.images?.length || "No images",
-    },
-    {
-      key: "createdAt",
-      label: "Created At",
-      render: (row: IBlogPayload) => new Date(row.createdAt).toLocaleDateString(),
-    },
-    {
-      key: "updatedAt",
-      label: "Updated At",
-      render: (row: IBlogPayload) => new Date(row.updatedAt).toLocaleDateString(),
-    },
-  ];
+  // Table columns with action buttons
+ const columns: Column<IBlogPayload>[] = [
+  {
+    key: "title", // Must be a property of IBlogPayload
+    label: "Title",
+    render: (row: IBlogPayload) => row.title
+  },
+  {
+    key: "author", // Must be a property of IBlogPayload
+    label: "Author", 
+    render: (row: IBlogPayload) => row.author
+  },
+  {
+    key: "tags", // Must be a property of IBlogPayload
+    label: "Tags", 
+    render: (row: IBlogPayload) => (
+      <div className="flex flex-wrap gap-1">
+        {Array.isArray(row.tags) ? row.tags.map((tag, index) => (
+          <span 
+            key={index}
+            className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+          >
+            {tag}
+          </span>
+        )) : <span className="text-gray-400 italic">No tags</span>}
+      </div>
+    )
+  },
+  // ... other columns
+];
 
   return (
     <AppContainer>
-      <div className="p-3 grid gap-6">
-        {/* Header Actions */}
-        {/* Add/Edit Dialog */}
-        <AddBlogDialog
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-          blogToEdit={selectedBlog || undefined}
-          onBlogSaved={() => handleSubmitBlog(selectedBlog!)}
-        />
-        <AppHeaderActions
-          title="Add Blog"
-          filterText={filterText}
-          setFilterText={setFilterText}
-          onAddClick={openAddDialog}
-        />
-
-        {/* Table */}
-        <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
-            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-          }`}
-        >
-          {isLoading ? (
-            <TableSkeleton rows={pageSize} />
-          ) : (
-            <GlobalTable<IBlogPayload>
-              columns={columns}
-              data={paginatedBlogs}
-              onEdit={openEditDialog}
-              onDelete={handleDelete}
-            />
-          )}
+      <div className="p-2 space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Blog Management</h1>
+            <p className="text-gray-600 mt-1">Create, edit, and manage your blog posts</p>
+          </div>
+        
         </div>
 
-        {/* Bottom Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
+        {/* Search and Filter Section */}
+        <AppHeaderActions
+          title="Blog Posts"
+          filterText={filterText}
+          setFilterText={setFilterText}
+          onAddClick={handleAddBlog}
+        />
+
+        {/* Table Section */}
+        <div className="bg-white rounded-lg border shadow-sm">
+          <div className={`overflow-x-auto ${pageSize > 5 ? "max-h-[500px] overflow-y-auto" : ""}`}>
+            {isLoading ? (
+              <TableSkeleton rows={pageSize} />
+            ) : (
+              <GlobalTable<IBlogPayload>
+                columns={columns}
+                data={paginatedBlogs}
+                onEdit={handleEditBlog}
+                onDelete={handleDeleteClick}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Pagination Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t">
           <PageSizeSelector
             pageSize={pageSize}
             setPageSize={setPageSize}
@@ -140,7 +167,29 @@ export default function BlogPage() {
           />
         </div>
 
-        
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the blog post 
+                {blogToDelete?.title}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelDelete}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleConfirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppContainer>
   );

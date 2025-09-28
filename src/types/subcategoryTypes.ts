@@ -1,7 +1,6 @@
 export interface ISubcategory {
   _id: string; // Backend _id as string
   name: string;
-  slug: string;
   description?: string;
   images?: (string | File)[];
   categoryId: string; // Frontend can just use string

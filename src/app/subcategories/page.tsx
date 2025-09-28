@@ -17,8 +17,7 @@ import { ISubcategory } from "@/types/subcategoryTypes";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 import { useCategories } from "@/hooks/Categories";
-
-
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 export default function SubcategoryPage() {
   const [filterText, setFilterText] = useState("");
@@ -34,7 +33,6 @@ export default function SubcategoryPage() {
   const updateSubcategory = useUpdateSubcategory();
   const deleteSubcategory = useDeleteSubcategory();
 
-  // Keep subcategories as-is, no parentCategoryId
   const filteredSubcategories = useMemo(() => {
     return subcategories.filter(c =>
       (c.name ?? "").toLowerCase().includes(filterText.toLowerCase())
@@ -74,16 +72,17 @@ export default function SubcategoryPage() {
 
   const columns = [
     { key: "name" as keyof ISubcategory, label: "Name" },
-    { key: "slug" as keyof ISubcategory, label: "Slug" },
-    { key: "description" as keyof ISubcategory, label: "Description" },
     {
       key: "categoryId" as keyof ISubcategory,
       label: "Category",
       render: (row: ISubcategory) => {
-        // You'll need to map categoryId to category name
         const category = categories.find(c => c._id === row.categoryId);
         return category?.name || "N/A";
       }
+    },
+    {
+      key: "description" as keyof ISubcategory,
+      label: "Description",
     },
     {
       key: "images" as keyof ISubcategory,
@@ -105,55 +104,57 @@ export default function SubcategoryPage() {
   ];
 
   return (
-    <AppContainer>
-      <div className="p-3 grid gap-6">
-        <AppHeaderActions
-          title="Add Subcategory"
-          filterText={filterText}
-          setFilterText={setFilterText}
-          onAddClick={openAddDialog}
-        />
+    <AppProtectedRoute>
 
-        <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-            }`}
-        >
-          {isLoading ? (
-            <TableSkeleton rows={pageSize} />
-          ) : (
-            <GlobalTable
-              columns={columns}
-              data={paginatedSubcategories}
-              onEdit={openEditDialog}
-              onDelete={handleDelete}
-            />
-          )}
+      <AppContainer>
+        <div className="p-3 grid gap-6">
+          <AppHeaderActions
+            title="Add Subcategory"
+            filterText={filterText}
+            setFilterText={setFilterText}
+            onAddClick={openAddDialog}
+          />
+
+          <div
+            className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+              }`}
+          >
+            {isLoading ? (
+              <TableSkeleton rows={pageSize} />
+            ) : (
+              <GlobalTable
+                columns={columns}
+                data={paginatedSubcategories}
+                onEdit={openEditDialog}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
+            <PageSizeSelector pageSize={pageSize} setPageSize={setPageSize} setCurrentPage={setCurrentPage} />
+            <ShadCNPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          </div>
+          <AddSubcategoryDialog
+            isOpen={isDialogOpen}
+            onClose={() => setIsDialogOpen(false)}
+            onSubmitSubcategory={handleSubmitSubcategory}
+            subcategoryToEdit={
+              selectedSubcategory
+                ? {
+                  _id: selectedSubcategory._id,
+                  name: selectedSubcategory.name || "",
+                  description: selectedSubcategory.description || "",
+                  categoryId: selectedSubcategory.categoryId || "",
+                  images: (selectedSubcategory.images || []).filter(img => typeof img === "string") as string[],
+                }
+                : undefined
+            }
+            categories={categories}
+          />
+
         </div>
-
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
-          <PageSizeSelector pageSize={pageSize} setPageSize={setPageSize} setCurrentPage={setCurrentPage} />
-          <ShadCNPagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-        </div>
-
-        <AddSubcategoryDialog
-          isOpen={isDialogOpen}
-          onClose={() => setIsDialogOpen(false)}
-          onSubmitSubcategory={handleSubmitSubcategory}
-          subcategoryToEdit={
-            selectedSubcategory
-              ? {
-                _id: selectedSubcategory._id,
-                name: selectedSubcategory.name || "",
-                slug: selectedSubcategory.slug || "",
-                description: selectedSubcategory.description || "",
-                images: (selectedSubcategory.images || []) as string[], // Explicitly cast to string[]
-                categoryId: selectedSubcategory.categoryId || "",
-              }
-              : undefined
-          }
-          categories={categories}
-        />
-      </div>
-    </AppContainer>
+      </AppContainer>
+    </AppProtectedRoute>
   );
 }

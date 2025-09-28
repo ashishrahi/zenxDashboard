@@ -12,6 +12,7 @@ import {
   useDeleteOrder,
 } from "@/hooks/Orders";
 import { IOrderPayload } from "@/types/IOrderPayload";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 // Column Type
 export interface Column<RowType> {
@@ -95,48 +96,50 @@ export default function OrdersPage() {
   ];
 
   return (
-    <AppContainer>
-      <div className="p-3 grid gap-6">
-        {/* Header Actions */}
-        <AppHeaderActions
-          title="Orders"
-          filterText={filterText}
-          setFilterText={setFilterText}
-          onAddClick={() => {}}
-        />
+    <AppProtectedRoute>
 
-        {/* Table */}
-        <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
-            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-          }`}
-        >
-          {isLoading ? (
-            <TableSkeleton rows={pageSize} />
-          ) : (
-            <GlobalTable<IOrderPayload>
-              columns={columns}
-              data={paginatedOrders}
-              onEdit={handleEditOrder}
-              onDelete={handleDeleteOrder}
+      <AppContainer>
+        <div className="p-3 grid gap-6">
+          {/* Header Actions */}
+          <AppHeaderActions
+            title="Orders"
+            filterText={filterText}
+            setFilterText={setFilterText}
+            onAddClick={() => { }}
+          />
+
+          {/* Table */}
+          <div
+            className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+              }`}
+          >
+            {isLoading ? (
+              <TableSkeleton rows={pageSize} />
+            ) : (
+              <GlobalTable<IOrderPayload>
+                columns={columns}
+                data={paginatedOrders}
+                onEdit={handleEditOrder}
+                onDelete={handleDeleteOrder}
+              />
+            )}
+          </div>
+
+          {/* Bottom Controls */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
+            <PageSizeSelector
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              setCurrentPage={setCurrentPage}
             />
-          )}
+            <ShadCNPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </div>
-
-        {/* Bottom Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
-          <PageSizeSelector
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            setCurrentPage={setCurrentPage}
-          />
-          <ShadCNPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      </div>
-    </AppContainer>
+      </AppContainer>
+    </AppProtectedRoute>
   );
 }

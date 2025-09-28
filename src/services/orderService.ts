@@ -7,7 +7,7 @@ export const OrderService = {
   // Fetch all orders
   getAll: async (): Promise<IOrderPayload[]> => {
     const response = await axiosInstance.get("/orders");
-    return response?.data?.data;
+    return response?.data?.data; // returns array of orders
   },
 
   // Fetch a single order by ID

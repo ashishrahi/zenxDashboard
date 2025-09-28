@@ -8,4 +8,5 @@ export interface IExport {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  countryId:string;
 }

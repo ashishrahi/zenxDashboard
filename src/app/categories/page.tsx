@@ -14,14 +14,16 @@ import {
 } from "@/hooks/Categories/index";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 // Column type for table
 export interface Column<RowType> {
-  key: keyof RowType; // must be a valid property of the row
+  key: keyof RowType;
   label: string;
   render?: (row: RowType) => React.ReactNode;
 }
 
+// GlobalTable props
 export interface GlobalTableProps<RowType extends { _id: string }> {
   columns: Column<RowType>[];
   data: RowType[];
@@ -34,7 +36,6 @@ export interface GlobalTableProps<RowType extends { _id: string }> {
 export interface ICategoryPayload {
   _id: string;
   name: string;
-  slug: string;
   description?: string;
   images: string[];
   gender?: string;
@@ -64,7 +65,6 @@ export default function CategoryPage() {
     currentPage * pageSize
   );
 
-  // Dialog open functions
   const openAddDialog = () => {
     setSelectedCategory(null);
     setIsDialogOpen(true);
@@ -75,7 +75,6 @@ export default function CategoryPage() {
     setIsDialogOpen(true);
   };
 
-  // Submit category
   const handleSubmitCategory = (category: ICategoryPayload) => {
     if (category._id) {
       updateCategory.mutate(category);
@@ -85,13 +84,10 @@ export default function CategoryPage() {
     setIsDialogOpen(false);
   };
 
-  // Delete category
   const handleDelete = (category: ICategoryPayload) => deleteCategory.mutate(category._id);
 
-  // Table columns
   const columns: Column<ICategoryPayload>[] = [
     { key: "name", label: "Name" },
-    { key: "slug", label: "Slug" },
     { key: "description", label: "Description" },
     {
       key: "images",
@@ -111,9 +107,9 @@ export default function CategoryPage() {
   ];
 
   return (
+    <AppProtectedRoute>
     <AppContainer>
       <div className="p-3 grid gap-6">
-        {/* Header Actions */}
         <AppHeaderActions
           title="Add Category"
           filterText={filterText}
@@ -121,7 +117,6 @@ export default function CategoryPage() {
           onAddClick={openAddDialog}
         />
 
-        {/* Table */}
         <div
           className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
             pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
@@ -139,7 +134,6 @@ export default function CategoryPage() {
           )}
         </div>
 
-        {/* Bottom Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
           <PageSizeSelector
             pageSize={pageSize}
@@ -153,15 +147,14 @@ export default function CategoryPage() {
           />
         </div>
 
-        {/* Add/Edit Dialog */}
         <AddCategoryDialog
-  isOpen={isDialogOpen}
-  onClose={() => setIsDialogOpen(false)}
-  categoryToEdit={selectedCategory || undefined}
-  onCategorySaved={() => handleSubmitCategory(selectedCategory!)}
-/>
-
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          categoryToEdit={selectedCategory || undefined}
+          onCategorySaved={() => handleSubmitCategory(selectedCategory!)}
+        />
       </div>
     </AppContainer>
+    </AppProtectedRoute>
   );
 }

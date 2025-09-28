@@ -1,4 +1,6 @@
-export interface IFAQ{
-    question?: string,
-    answer?: string,
+export interface IFaq{
+    _id:string,
+    question: string,
+    answer: string,
+    createdAt:Date
 }

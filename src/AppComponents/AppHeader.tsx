@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+import { AppBreadcrumbs } from "@/AppComponents/AppBreadcrumbs";
+
 interface HeaderProps {
   onToggleSidebar: () => void;
 }
@@ -20,14 +22,15 @@ interface HeaderProps {
 export function Header({ onToggleSidebar }: HeaderProps) {
   const dispatch = useDispatch();
   const { email } = useSelector((state: RootState) => state.auth);
- const router = useRouter();
+  const router = useRouter();
+
   const handleLogout = () => {
     dispatch(logout());
-     router.push("/login");
+    router.push("/login");
   };
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-[#1a1a1a] border-b border-gray-800 shadow-md sticky top-0 z-30">
+    <header className="flex items-center justify-between px-4 py-3 bg-accent-foreground border-b border-gray-800 shadow-md sticky top-0 z-30">
       <div className="flex items-center space-x-3">
         {/* Sidebar Toggle */}
         <button
@@ -39,20 +42,8 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           <Menu className="w-5 h-5 text-gray-400 hover:text-white" />
         </button>
 
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="text-sm overflow-x-auto">
-          <ol className="flex items-center space-x-2 text-gray-400 whitespace-nowrap">
-            <li>
-              <a href="#" className="hover:text-white transition-colors">
-                Application
-              </a>
-            </li>
-            <li className="text-gray-600" aria-hidden="true">
-              /
-            </li>
-            <li className="text-gray-200 font-medium">Data Fetching</li>
-          </ol>
-        </nav>
+        {/* ShadCN Breadcrumb */}
+        <AppBreadcrumbs />
       </div>
 
       {/* User Profile Menu */}
@@ -69,16 +60,10 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent className="w-48 bg-[#1a1a1a] text-gray-200 border-gray-800">
-            <DropdownMenuLabel className="text-sm">
-              {email || "Guest User"}
-            </DropdownMenuLabel>
+            <DropdownMenuLabel className="text-sm">{email || "Guest User"}</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-gray-700" />
-            
-            <DropdownMenuItem className="hover:bg-gray-800 cursor-pointer">
-              Profile
-            </DropdownMenuItem>
+            <DropdownMenuItem className="hover:bg-gray-800 cursor-pointer">Profile</DropdownMenuItem>
             <DropdownMenuSeparator className="bg-gray-700" />
-            
             <DropdownMenuItem
               onClick={handleLogout}
               className="hover:bg-red-600 cursor-pointer text-red-400 focus:text-red-300"

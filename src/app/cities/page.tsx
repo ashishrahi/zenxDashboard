@@ -3,20 +3,21 @@
 import { useState, useMemo } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import { AddCityDialog } from "@/AppComponents/AppCityDialog"; // Updated
+import { AddCityDialog } from "@/AppComponents/AppCityDialog";
 import { ShadCNPagination } from "@/AppComponents/AppPagination";
 import AppHeaderActions from "@/AppComponents/AppHeaderActions";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 
 import {
-  useCities,       
-  useAddCity,      
-  useUpdateCity,  
-  useDeleteCity,   
+  useCities,
+  useAddCity,
+  useUpdateCity,
+  useDeleteCity,
 } from "@/hooks/Cities";
 
-import { ICityPayload } from "@/types/ICityPayload"; // Updated type
+import { ICityPayload } from "@/types/ICityPayload";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 export interface Column<RowType> {
   key: keyof RowType;
@@ -28,7 +29,7 @@ export default function CityPage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [selectedCity, setSelectedCity] = useState<ICityPayload | null>(null);
+  const [selectedCity, setSelectedCity] =  useState<ICityPayload | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data: cities = [], isLoading } = useCities();
@@ -91,22 +92,22 @@ export default function CityPage() {
   };
 
   const handleCitySaved = (city: ICityPayload) => {
-    if (city._id) {
-      updateCity.mutate(city);
-    } else {
-      addCity.mutate(city);
-    }
+    if (city._id) updateCity.mutate(city);
+    else addCity.mutate(city);
+
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (city: ICityPayload) => deleteCity.mutate(city._id);
+  const handleDelete = (city: ICityPayload) => {
+    deleteCity.mutate(city._id);
+  };
 
   return (
+    <AppProtectedRoute>
     <AppContainer>
       <div className="p-3 grid gap-6">
         <AppHeaderActions
           title="Add City"
-          searchText ="cityname"
           filterText={filterText}
           setFilterText={setFilterText}
           onAddClick={openAddDialog}
@@ -142,15 +143,16 @@ export default function CityPage() {
           />
         </div>
 
-        {isDialogOpen && (
-          <AddCityDialog
-            isOpen={isDialogOpen}
-            onClose={() => setIsDialogOpen(false)}
-            cityToEdit={selectedCity ?? null}
-            onSubmit={handleCitySaved}
-          />
-        )}
+      {isDialogOpen && (
+  <AddCityDialog
+    isOpen={isDialogOpen}
+    onClose={() => setIsDialogOpen(false)}
+    cityToEdit={selectedCity ?? null} // <-- normalize undefined to null
+    onSubmit={handleCitySaved}
+  />
+)}
       </div>
     </AppContainer>
+    </AppProtectedRoute>
   );
 }

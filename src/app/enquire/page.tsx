@@ -16,6 +16,8 @@ import {
 
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
+import { toast } from "sonner";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 // Column type
 export interface Column<RowType> {
@@ -61,12 +63,33 @@ export default function EnquirePage() {
 
   const handleSubmitEnquire = (enquire: IEnquire) => {
     if (enquire._id) {
-      updateEnquire.mutate(enquire);
+      // Update existing enquiry
+      updateEnquire.mutate(enquire, {
+        onSuccess: (response: { message?: string }) => {
+          // Use backend message if available, fallback to default
+          toast.success(response?.message || "Enquiry updated successfully!");
+          setIsDialogOpen(false);
+        },
+        onError: (error: { message?: string }) => {
+          toast.error(error?.message || "Failed to update enquiry.");
+        },
+      });
     } else {
-      addEnquire.mutate(enquire);
+      // Add new enquiry
+      addEnquire.mutate(enquire, {
+        onSuccess: (response: { message?: string }) => {
+          // Show backend success message
+          toast.success(response?.message || "Enquiry added successfully!");
+          setIsDialogOpen(false);
+        },
+        onError: (error: { message?: string }) => {
+          toast.error(error?.message || "Failed to add enquiry.");
+        },
+      });
     }
-    setIsDialogOpen(false);
   };
+
+
 
   const handleDelete = (enquire: IEnquire) => deleteEnquire.mutate(enquire._id!);
 
@@ -84,6 +107,7 @@ export default function EnquirePage() {
   ];
 
   return (
+    <AppProtectedRoute>
     <AppContainer>
       <div className="p-3 grid gap-6">
         {/* Header Actions */}
@@ -96,9 +120,8 @@ export default function EnquirePage() {
 
         {/* Table */}
         <div
-          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
-            pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
-          }`}
+          className={`border rounded-md transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+            }`}
         >
           {isLoading ? (
             <TableSkeleton rows={pageSize} />
@@ -135,5 +158,6 @@ export default function EnquirePage() {
         />
       </div>
     </AppContainer>
+    </AppProtectedRoute>
   );
 }

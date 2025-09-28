@@ -1,12 +1,17 @@
+"use client"
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BlogService } from "@/services/blogService";
-import { IBlog } from "@/types/blogTypes";
+import { IBlogPayload } from "@/types/IBlogPayloadTypes";
 
 export const useUpdateBlog = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<IBlog, Error, IBlog>({
-    mutationFn: (updatedBlog: IBlog) => BlogService.update(updatedBlog),
+  return useMutation<
+    IBlogPayload,
+    Error,
+    IBlogPayload & { images?: File[] }
+  >({
+    mutationFn: (blog) => BlogService.update(blog),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
     },

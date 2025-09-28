@@ -33,18 +33,23 @@ export function AddStateDialog({
     setValue, 
     formState: { errors, isValid } 
   } = useForm<IStatePayload>({
-    defaultValues: {
-      _id: stateToEdit?._id || "",
-      name: stateToEdit?.name || "",
-      code: stateToEdit?.code || "",
-      countryId: stateToEdit?.countryId || "",
-    },
+    defaultValues: stateToEdit
+      ? {
+          _id: stateToEdit._id,
+          name: stateToEdit.name,
+          code: stateToEdit.code,
+          countryId: stateToEdit.countryId,
+        }
+      : {
+          name: "",
+          code: "",
+          countryId: "",
+        },
     mode: "onChange",
   });
 
   const resetForm = useCallback(() => {
     reset({
-      _id: "",
       name: "",
       code: "",
       countryId: "",
@@ -58,10 +63,10 @@ export function AddStateDialog({
     }
 
     if (stateToEdit) {
-      setValue("_id", stateToEdit._id || "");
-      setValue("name", stateToEdit.name || "");
-      setValue("code", stateToEdit.code || "");
-      setValue("countryId", stateToEdit.countryId || "");
+      setValue("_id", stateToEdit._id);
+      setValue("name", stateToEdit.name);
+      setValue("code", stateToEdit.code);
+      setValue("countryId", stateToEdit.countryId);
     } else {
       resetForm();
     }
@@ -72,11 +77,11 @@ export function AddStateDialog({
   }, [isOpen, stateToEdit, setValue, resetForm]);
 
   const handleFormSubmit = (data: IStatePayload) => {
-    // Ensure _id is preserved when editing
     if (stateToEdit?._id) {
-      data._id = stateToEdit._id;
+      onSubmit({ ...data, _id: stateToEdit._id });
+    } else {
+      onSubmit(data);
     }
-    onSubmit(data);
   };
 
   const handleClose = () => {

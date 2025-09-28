@@ -26,30 +26,13 @@ export function AddCityDialog({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const { data: states = [] } = useStates();
 
-  const { 
-    register, 
-    handleSubmit, 
-    reset, 
-    setValue, 
-    formState: { errors, isValid } 
-  } = useForm<ICityPayload>({
-    defaultValues: {
-      _id: cityToEdit?._id || "",
-      name: cityToEdit?.name || "",
-      code: cityToEdit?.code || "",
-      stateId: cityToEdit?.stateId || "",
-    },
+  // Use default values to prevent TypeScript errors
+  const { register, handleSubmit, reset, setValue, formState: { errors, isValid } } = useForm<ICityPayload>({
+    defaultValues: cityToEdit ?? { _id: "", name: "", code: "", stateId: "" },
     mode: "onChange",
   });
 
-  const resetForm = useCallback(() => {
-    reset({
-      _id: "",
-      name: "",
-      code: "",
-      stateId: "",
-    });
-  }, [reset]);
+  const resetForm = useCallback(() => reset({ _id: "", name: "", code: "", stateId: "" }), [reset]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -72,9 +55,7 @@ export function AddCityDialog({
   }, [isOpen, cityToEdit, setValue, resetForm]);
 
   const handleFormSubmit = (data: ICityPayload) => {
-    if (cityToEdit?._id) {
-      data._id = cityToEdit._id;
-    }
+    if (cityToEdit?._id) data._id = cityToEdit._id;
     onSubmit(data);
   };
 
@@ -104,7 +85,7 @@ export function AddCityDialog({
               placeholder="e.g., Mumbai"
               {...register("name", { 
                 required: "City name is required", 
-                minLength: { value: 2, message: "City name must be at least 2 characters" } 
+                minLength: { value: 2, message: "State name must be at least 2 characters" } 
               })}
               ref={(e) => { register("name").ref(e); nameInputRef.current = e; }}
               className="placeholder:text-[var(--muted-foreground)] dark:placeholder:text-[var(--muted-foreground)] text-[var(--foreground)] dark:text-[var(--foreground)] bg-[var(--input)] dark:bg-[var(--input)] border-[var(--border)] dark:border-[var(--border)]"
@@ -122,8 +103,8 @@ export function AddCityDialog({
               placeholder="e.g., BOM"
               {...register("code", { 
                 required: "City code is required", 
-                minLength: { value: 2, message: "City code must be at least 2 characters" }, 
-                maxLength: { value: 5, message: "City code must be less than 5 characters" } 
+                minLength: { value: 2, message: "City code must be at least 2 characters" },
+                maxLength: { value: 5, message: "City code must be at most 5 characters" } 
               })}
               className="placeholder:text-[var(--muted-foreground)] dark:placeholder:text-[var(--muted-foreground)] text-[var(--foreground)] dark:text-[var(--foreground)] bg-[var(--input)] dark:bg-[var(--input)] border-[var(--border)] dark:border-[var(--border)]"
             />

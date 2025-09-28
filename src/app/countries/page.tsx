@@ -17,6 +17,7 @@ import {
 } from "@/hooks/Countries";
 
 import { ICountryPayload } from "@/types/ICountryTypes";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 export interface Column<RowType> {
   key: keyof RowType;
@@ -94,19 +95,23 @@ export default function CountryPage() {
   };
 
   // Handle save from dialog
-  const handleCountrySaved = (country: ICountryPayload) => {
-    if (country._id) {
-      updateCountry.mutate(country);
-    } else {
-      addCountry.mutate(country);
-    }
-    setIsDialogOpen(false);
-  };
+ const handleCountrySaved = (country: ICountryPayload) => {
+  if (selectedCountry && selectedCountry._id) {
+    // Edit mode: merge the _id from selectedCountry
+    updateCountry.mutate({ ...country, _id: selectedCountry._id });
+  } else {
+    // Add mode
+    addCountry.mutate(country);
+  }
+  setIsDialogOpen(false);
+};
+
 
   // Handle delete
   const handleDelete = (country: ICountryPayload) => deleteCountry.mutate(country._id);
 
   return (
+    <AppProtectedRoute>
     <AppContainer>
       <div className="p-3 grid gap-6">
         <AppHeaderActions
@@ -156,5 +161,6 @@ export default function CountryPage() {
         )}
       </div>
     </AppContainer>
+    </AppProtectedRoute>
   );
 }

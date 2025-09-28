@@ -19,13 +19,13 @@ export const EnquireService = {
   // Create a new enquiry
   create: async (enquire: Omit<IEnquire, "_id">) => {
     const response = await axiosInstance.post("/enquires/create", enquire);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Update an existing enquiry
   update: async (enquire: IEnquire) => {
     const response = await axiosInstance.put(`/enquires/update/${enquire._id}`, enquire);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Delete an enquiry by ID

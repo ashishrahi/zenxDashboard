@@ -3,20 +3,21 @@
 import { useState, useMemo } from "react";
 import { AppContainer } from "@/AppComponents/AppContainer";
 import { GlobalTable } from "@/AppComponents/AppTable";
-import { AddStateDialog } from "@/AppComponents/AppStateDialog"; // Updated
+import { AddStateDialog } from "@/AppComponents/AppStateDialog";
 import { ShadCNPagination } from "@/AppComponents/AppPagination";
 import AppHeaderActions from "@/AppComponents/AppHeaderActions";
 import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 
 import {
-  useStates,       // Updated hook
-  useAddState,     // Updated hook
-  useUpdateState,  // Updated hook
-  useDeleteState,  // Updated hook
+  useStates,
+  useAddState,
+  useUpdateState,
+  useDeleteState,
 } from "@/hooks/States";
 
-import { IStatePayload } from "@/types/IStateTypes"; // Updated type
+import { IStatePayload } from "@/types/IStateTypes";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 export interface Column<RowType> {
   key: keyof RowType;
@@ -102,6 +103,8 @@ export default function StatePage() {
   const handleDelete = (state: IStatePayload) => deleteState.mutate(state._id);
 
   return (
+        <AppProtectedRoute>
+    
     <AppContainer>
       <div className="p-3 grid gap-6">
         <AppHeaderActions
@@ -151,5 +154,6 @@ export default function StatePage() {
         )}
       </div>
     </AppContainer>
+    </AppProtectedRoute>
   );
 }
