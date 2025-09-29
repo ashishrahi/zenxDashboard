@@ -242,7 +242,7 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
           toast.error("Create functionality not available");
           return;
         }
-        const { _id, ...createPayload } = payload;
+        const {...createPayload } = payload;
         result = await addBlog.mutateAsync(createPayload);
       }
 
