@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppDispatch, RootState } from "@/store/store";
 import { loginUser } from "@/store/authSlice";
+import { toast } from "sonner";
 
 interface LoginFormValues {
   email: string;
@@ -35,12 +36,32 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     resolver: yupResolver(validationSchema),
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
-    const resultAction = await dispatch(loginUser(values));
-    if (loginUser.fulfilled.match(resultAction)) {
-      router.push("/"); // navigate to protected page
-    }
-  };
+
+const onSubmit = async (values: LoginFormValues) => {
+  const resultAction = await dispatch(loginUser(values));
+  
+  if (loginUser.fulfilled.match(resultAction)) {
+    // Login successful
+    const { userProfile } = resultAction.payload;
+    
+    toast.success("Login successful!", {
+      description: `Welcome back, ${userProfile.name}!`,
+    });
+    
+    setTimeout(() => {
+      router.push("/");
+    }, 1000);
+    
+  } else if (loginUser.rejected.match(resultAction)) {
+    // Login failed - show the error message from backend
+    const errorMessage = resultAction.payload;
+    
+    toast.error("Login Failed", {
+      description: errorMessage || "Invalid credentials",
+      duration: 5000,
+    });
+  }
+};
 
   return (
     <div className={cn("flex flex-col gap-6 p-8 max-w-md mx-auto border border-gray-700 rounded-lg shadow-lg bg-black text-white", className)} {...props}>

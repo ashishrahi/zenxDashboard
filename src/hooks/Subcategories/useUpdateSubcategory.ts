@@ -1,12 +1,12 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SubcategoryService } from "@/services/subcategoryService";
-import { ISubcategory } from "@/types/subcategoryTypes";
+import { ISubcategory, ISubcategoryResponse } from "@/types/subcategoryTypes";
 
 export const useUpdateSubcategory = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<ISubcategory, Error, ISubcategory>({
+  return useMutation<ISubcategoryResponse, Error, ISubcategory>({
     mutationFn: (updatedSubcategory: ISubcategory) => {
       if (!updatedSubcategory._id) {
         throw new Error("Subcategory ID is required for update");
@@ -14,7 +14,6 @@ export const useUpdateSubcategory = () => {
 
       const formData = new FormData();
       formData.append("name", updatedSubcategory.name || "");
-      formData.append("slug", updatedSubcategory.slug || "");
       formData.append("description", updatedSubcategory.description || "");
       formData.append("categoryId", updatedSubcategory.categoryId);
 

@@ -10,7 +10,6 @@ export const useAddSubcategory = () => {
     mutationFn: (newSubcategory) => {
       const formData = new FormData();
       formData.append("name", newSubcategory.name || "");
-      formData.append("slug", newSubcategory.slug || "");
       formData.append("description", newSubcategory.description || "");
       formData.append("categoryId", newSubcategory.categoryId);
       

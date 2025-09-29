@@ -66,7 +66,6 @@ export default function EnquirePage() {
       // Update existing enquiry
       updateEnquire.mutate(enquire, {
         onSuccess: (response: { message?: string }) => {
-          // Use backend message if available, fallback to default
           toast.success(response?.message || "Enquiry updated successfully!");
           setIsDialogOpen(false);
         },

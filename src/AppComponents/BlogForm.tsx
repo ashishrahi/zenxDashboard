@@ -34,9 +34,20 @@ import TipTapImage from "@tiptap/extension-image";
 import EditorToolbar from "../AppComponents/AppToolbarComponent";
 
 import { IBlogPayload } from "@/types/IBlogPayloadTypes";
-import { useAddBlog, useUpdateBlog } from "@/hooks/Blog";
+import { useAddBlog, useUpdateBlog } from "@/hooks/Blog/index";
 import { useSubcategories } from "@/hooks/Subcategories";
 import { ISubcategory } from "@/types/subcategoryTypes";
+
+
+export interface BlogApiResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    _id?: string;
+    id?: string;
+    [key: string]: unknown;
+  };
+}
 
 interface BlogFormValues {
   title: string;
@@ -53,25 +64,21 @@ interface BlogFormProps {
   onClose?: () => void;
 }
 
-// Define API response type
-interface BlogApiResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    _id?: string;
-    id?: string;
-    [key: string]: unknown;
-  };
-}
 type BlogFormPayload = IBlogPayload & {
-  imageFiles?: File[]; // Use a different property name for files
+  imageFiles?: File[];
   existingImages?: string[];
 };
 
+interface MutationHook {
+  mutateAsync: (payload: BlogFormPayload | Omit<BlogFormPayload, '_id'>) => Promise<BlogApiResponse>;
+  isPending?: boolean;
+  isLoading?: boolean;
+}
+
 export default function BlogForm({ initialData, mode = "create", blogId, onClose }: BlogFormProps) {
   const router = useRouter();
-  const addBlog = useAddBlog();
-  const updateBlog = useUpdateBlog(); // Remove parameter if hook doesn't accept it
+  const addBlog = useAddBlog() as MutationHook;
+  const updateBlog = useUpdateBlog() as MutationHook;
   const { data: subcategoriesData } = useSubcategories();
 
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -80,11 +87,11 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
   const [wordCount, setWordCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors }, 
-    setValue, 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
     watch,
     reset
   } = useForm<BlogFormValues>({
@@ -107,11 +114,11 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
       Placeholder.configure({ placeholder: "Start writing your amazing blog post..." }),
       BulletList,
       OrderedList,
-      TipTapImage.configure({ 
-        HTMLAttributes: { 
+      TipTapImage.configure({
+        HTMLAttributes: {
           class: 'blog-image',
           style: 'max-width: 100%; height: auto;'
-        } 
+        }
       }),
     ],
     content: "",
@@ -184,7 +191,6 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
   };
 
   const onSubmit = async (data: BlogFormValues) => {
-    // Validate content
     if (!editor) {
       toast.error("Editor is not initialized");
       return;
@@ -201,32 +207,30 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
       return;
     }
 
-    // Process tags
     const tagsArray = data.tags
       ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
       : [];
 
-    // Prepare payload - ensure it matches IBlogPayload structure
-   const payload: BlogFormPayload = {
-  _id: mode === "edit" && blogId ? blogId : "",
-  title: data.title.trim(),
-  description: data.description?.trim() || "",
-  category: data.category,
-  content: content,
-  tags: tagsArray,
-  author: "Current User",
-  createdAt: mode === "edit" ? new Date().toISOString() : new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  message: "",
-  ...(selectedImages.length > 0 && { imageFiles: selectedImages }),
-  ...(existingImages.length > 0 && { existingImages: existingImages })
-};
+    const payload: BlogFormPayload = {
+      _id: mode === "edit" && blogId ? blogId : "",
+      title: data.title.trim(),
+      description: data.description?.trim() || "",
+      category: data.category,
+      content: content,
+      tags: tagsArray,
+      author: "Current User",
+      createdAt: mode === "edit" ? new Date().toISOString() : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      message: "",
+      ...(selectedImages.length > 0 && { imageFiles: selectedImages }),
+      ...(existingImages.length > 0 && { existingImages: existingImages })
+    };
 
     try {
       const isEdit = mode === "edit" && blogId;
-      
+
       let result: BlogApiResponse;
-      
+
       if (isEdit) {
         if (!updateBlog) {
           toast.error("Update functionality not available");
@@ -238,14 +242,13 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
           toast.error("Create functionality not available");
           return;
         }
-        // For create, remove _id from payload
         const { _id, ...createPayload } = payload;
         result = await addBlog.mutateAsync(createPayload);
       }
 
-      if (result?.success) {
+      if (result.success) {
         toast.success(result.message);
-        
+
         if (onClose) {
           onClose();
         } else {
@@ -257,13 +260,13 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
           }
         }
       } else {
-        toast.error(result?.message || `Failed to ${isEdit ? 'update' : 'create'} blog post`);
+        toast.error(result.message || `Failed to ${isEdit ? 'update' : 'create'} blog post`);
       }
     } catch (error: unknown) {
       console.error("Error saving blog:", error);
-      
+
       let errorMessage = `Something went wrong while ${mode === 'edit' ? 'updating' : 'creating'} the blog post`;
-      
+
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'object' && error !== null) {
@@ -272,16 +275,14 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
           errorMessage = errorObj.response.data.message;
         }
       }
-      
+
       toast.error(errorMessage);
     }
   };
 
-  // Use isPending for TanStack Query v5+ or isLoading for v4
-  const isFormLoading = (addBlog as any).isPending || (updateBlog as any).isPending || 
-                       (addBlog as any).isLoading || (updateBlog as any).isLoading;
+  const isFormLoading = addBlog.isPending || updateBlog.isPending ||
+    addBlog.isLoading || updateBlog.isLoading;
 
-  // Show skeleton loader until mounted to prevent hydration issues
   if (!isMounted) {
     return (
       <div className="space-y-8">
@@ -343,8 +344,8 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
               <Label htmlFor="title">Title *</Label>
               <Input
                 id="title"
-                {...register("title", { 
-                  required: "Title is required", 
+                {...register("title", {
+                  required: "Title is required",
                   minLength: { value: 3, message: "Title must be at least 3 characters" },
                   maxLength: { value: 200, message: "Title must be less than 200 characters" }
                 })}
@@ -358,8 +359,8 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
               <Label htmlFor="description">Description *</Label>
               <Textarea
                 id="description"
-                {...register("description", { 
-                  required: "Description is required", 
+                {...register("description", {
+                  required: "Description is required",
                   minLength: { value: 10, message: "Description must be at least 10 characters" },
                   maxLength: { value: 500, message: "Description must be less than 500 characters" }
                 })}
@@ -412,9 +413,9 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
                     {existingImages.map((imageUrl, index) => (
                       <div key={index} className="relative group">
                         <div className="h-16 w-16 relative">
-                          <Image 
-                            src={imageUrl} 
-                            alt={`Existing ${index}`} 
+                          <Image
+                            src={imageUrl}
+                            alt={`Existing ${index}`}
                             fill
                             className="object-cover rounded border"
                             sizes="64px"
@@ -479,9 +480,9 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
               {editor && (
                 <Card className="border">
                   <EditorToolbar editor={editor} />
-                  <EditorContent 
-                    editor={editor} 
-                    className="min-h-[300px] p-4 prose max-w-none" 
+                  <EditorContent
+                    editor={editor}
+                    className="min-h-[300px] p-4 prose max-w-none"
                   />
                 </Card>
               )}
@@ -492,9 +493,9 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button 
-                type="submit" 
-                disabled={isFormLoading} 
+              <Button
+                type="submit"
+                disabled={isFormLoading}
                 className="flex items-center gap-2"
               >
                 {isFormLoading ? (
@@ -509,11 +510,11 @@ export default function BlogForm({ initialData, mode = "create", blogId, onClose
                   </>
                 )}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose || (() => router.back())} 
-                className="flex items-center gap-2" 
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose || (() => router.back())}
+                className="flex items-center gap-2"
                 disabled={isFormLoading}
               >
                 <ArrowLeft className="w-4 h-4" />

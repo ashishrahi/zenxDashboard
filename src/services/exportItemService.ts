@@ -19,13 +19,13 @@ export const ExportItemService = {
   // Create a new export item
   create: async (item: Omit<IExport, "_id">) => {
     const response = await axiosInstance.post("/exports/create", item);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Update an existing export item
   update: async (item: IExport) => {
     const response = await axiosInstance.put(`/exports/update/${item._id}`, item);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Delete an export item by ID

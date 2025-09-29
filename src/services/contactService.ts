@@ -19,13 +19,13 @@ export const ContactService = {
   // Create a new contact
   create: async (contact: Omit<IContact, "_id">) => {
     const response = await axiosInstance.post("/contacts/create", contact);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Update an existing contact
   update: async (contact: IContact) => {
     const response = await axiosInstance.put(`/contacts/update/${contact._id}`, contact);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Delete a contact by ID

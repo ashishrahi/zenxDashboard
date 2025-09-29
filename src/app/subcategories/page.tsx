@@ -18,6 +18,7 @@ import { PageSizeSelector } from "@/AppComponents/AppPageSizeSelector";
 import { TableSkeleton } from "@/AppComponents/TableSkeleton";
 import { useCategories } from "@/hooks/Categories";
 import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
+import { toast } from "sonner";
 
 export default function SubcategoryPage() {
   const [filterText, setFilterText] = useState("");
@@ -58,7 +59,18 @@ export default function SubcategoryPage() {
 
   const handleSubmitSubcategory = (subcategory: ISubcategory) => {
     if (subcategory._id) {
-      updateSubcategory.mutate(subcategory);
+      updateSubcategory.mutate(subcategory,{
+         onSuccess: (response: { message?: string }) => {
+         console.log("Backend response:", response);
+          
+          toast.success(response?.message || "Subcategory updated successfully!");
+          setIsDialogOpen(false);
+        },
+        onError: (error: { message?: string }) => {
+          toast.error(error?.message || "Failed to update enquiry.");
+        },
+      });
+      
     } else {
       addSubcategory.mutate(subcategory);
     }

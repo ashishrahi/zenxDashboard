@@ -21,7 +21,7 @@ export const CategoryService = {
     const response = await axiosInstance.post("/categories/create", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Update an existing category with files and existing images
@@ -29,7 +29,7 @@ export const CategoryService = {
     const response = await axiosInstance.put(`/categories/update/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Delete a category by ID

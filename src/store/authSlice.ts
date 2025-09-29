@@ -2,6 +2,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axiosInstance from "@/lib/axios";
+import { AxiosError } from "axios";
 
 // ===== Types =====
 export interface IAuth {
@@ -59,10 +60,18 @@ export const loginUser = createAsyncThunk<ILoginResponse, IUser, { rejectValue: 
     try {
       const response = await axiosInstance.post("/auth/login", userData);
       if (!response.data || !response.data.data) throw new Error("Invalid API response");
-      return response.data.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || err.message || "Login failed");
-    }
+      return response?.data?.data;
+    } catch (err: unknown) {
+  let message = "Refresh token failed";
+
+  if (err instanceof AxiosError) {
+    message = err.response?.data?.message || message;
+  } else if (err instanceof Error) {
+    message = err.message;
+  }
+
+  return rejectWithValue(message);
+}
   }
 );
 
@@ -78,9 +87,17 @@ export const refreshTokenThunk = createAsyncThunk<{ token: string }, void, { rej
       const { data } = await axiosInstance.post("/auth/refresh-token", { refreshToken });
       localStorage.setItem("token", data.data.token);
       return { token: data.data.token };
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || "Refresh token failed");
-    }
+    } catch (err: unknown) {
+  let message = "Refresh token failed";
+
+  if (err instanceof AxiosError) {
+    message = err.response?.data?.message || message;
+  } else if (err instanceof Error) {
+    message = err.message;
+  }
+
+  return rejectWithValue(message);
+}
   }
 );
 

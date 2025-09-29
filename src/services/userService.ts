@@ -6,14 +6,14 @@ import { IUser } from "@/types/userTypes";
 export const UserService = {
   // Fetch all users
   getAll: async (): Promise<IUser[]> => {
-    const { data } = await axiosInstance.get("/users");
-    return data?.data ?? data;
+    const response = await axiosInstance.get("/users");
+    return response?.data?.data;
   },
 
   // Fetch a single user by ID
   getById: async (id: string): Promise<IUser> => {
-    const { data } = await axiosInstance.get(`/users/${id}`);
-    return data?.data ?? data;
+    const response = await axiosInstance.get(`/users/${id}`);
+    return response?.data?.data;
   },
 
   // Create a new user (supports file upload)
@@ -28,11 +28,11 @@ export const UserService = {
       formData.append("profileImage", user.profileImage);
     }
 
-    const { data } = await axiosInstance.post("/users", formData, {
+    const response = await axiosInstance.post("/users", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return data?.data ?? data;
+    return response?.data;
   },
 
   // Update an existing user (supports file upload)
@@ -47,11 +47,11 @@ export const UserService = {
       formData.append("profileImage", user.profileImage);
     }
 
-    const { data } = await axiosInstance.put(`/users/${user._id}`, formData, {
+    const response = await axiosInstance.put(`/users/${user._id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return data?.data ?? data;
+    return response?.data;
   },
 
   // Delete a user by ID

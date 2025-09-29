@@ -19,13 +19,13 @@ export const OrderService = {
   // Create a new order
   create: async (order: Omit<IOrderPayload, "_id">) => {
     const response = await axiosInstance.post("/orders/create", order);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Update an existing order
   update: async (order: IOrderPayload) => {
     const response = await axiosInstance.put(`/orders/update/${order._id}`, order);
-    return response?.data?.data;
+    return response?.data;
   },
 
   // Delete an order by ID

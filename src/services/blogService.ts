@@ -6,14 +6,14 @@ import { IBlogPayload } from "@/types/IBlogPayloadTypes";
 export const BlogService = {
   // Fetch all blogs
   getAll: async (): Promise<IBlogPayload[]> => {
-    const { data } = await axiosInstance.get("/blogs");
-    return data?.data;
+    const response = await axiosInstance.get("/blogs");
+    return response?.data?.data;
   },
 
   // Fetch single blog
   getById: async (id: string): Promise<IBlogPayload> => {
-    const { data } = await axiosInstance.get(`/blogs/${id}`);
-    return data?.data;
+    const response = await axiosInstance.get(`/blogs/${id}`);
+    return response?.data?.data;
   },
 
   // Create new blog - FIXED to match backend expectations
@@ -36,13 +36,13 @@ export const BlogService = {
       console.warn("No image provided, backend validation might fail");
     }
 
-    const { data } = await axiosInstance.post("/blogs/create", formData, {
+    const response = await axiosInstance.post("/blogs/create", formData, {
       headers: { 
         "Content-Type": "multipart/form-data",
       },
     });
 
-    return data?.data;
+    return response?.data;
   },
 
   // Update existing blog - FIXED to match backend expectations
@@ -59,13 +59,13 @@ export const BlogService = {
       formData.append("image", blog.images[0]); // Use "image" not "images"
     }
 
-    const { data } = await axiosInstance.put(`/blogs/update/${blog._id}`, formData, {
+    const response = await axiosInstance.put(`/blogs/update/${blog._id}`, formData, {
       headers: { 
         "Content-Type": "multipart/form-data",
       },
     });
 
-    return data?.data;
+    return response?.data;
   },
 
   // Delete blog

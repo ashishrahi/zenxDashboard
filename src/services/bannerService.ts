@@ -29,7 +29,7 @@ export const BannerService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return response?.data?.data;
+    return response?.data;
   },
 
   update: async (banner: IBannerPayload & { images?: File[]; existingImages?: string[] }) => {
@@ -50,7 +50,7 @@ export const BannerService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return response?.data?.data;
+    return response?.data;
   },
 
   delete: async (id: string): Promise<void> => {

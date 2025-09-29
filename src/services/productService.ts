@@ -6,30 +6,30 @@ import { IProductPayload } from "@/types/productTypes";
 export const ProductService = {
   // Fetch all products
   getAll: async (): Promise<IProductPayload[]> => {
-    const { data } = await axiosInstance.get("/products");
-    return data?.data;
+    const response = await axiosInstance.get("/products");
+    return response?.data?.data;
   },
 
   // Fetch a single product by ID
   getById: async (id: string): Promise<IProductPayload> => {
-    const { data } = await axiosInstance.get(`/products/${id}`);
-    return data?.data;
+    const response = await axiosInstance.get(`/products/${id}`);
+    return response?.data?.data;
   },
 
   // Create a new product
   create: async (formData: FormData) => {
-    const { data } = await axiosInstance.post("/products/create", formData, {
+    const response = await axiosInstance.post("/products/create", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return data?.data;
+    return response?.data;
   },
 
   // Update an existing product - FIXED VERSION
   update: async (id: string, formData: FormData) => {
-    const { data } = await axiosInstance.put(`/products/update/${id}`, formData, {
+    const response = await axiosInstance.put(`/products/update/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return data?.data;
+    return response?.data
   },
 
   // Delete a product by ID
