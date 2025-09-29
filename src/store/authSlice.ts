@@ -41,6 +41,7 @@ export interface IAuthState {
   user: IUserProfile | null;
   loading: boolean;
   error: string | null;
+  email:string | null
 }
 
 // ===== Initial State =====
@@ -51,6 +52,7 @@ const initialState: IAuthState = {
   user: typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null,
   loading: false,
   error: null,
+  email:null,
 };
 
 // ===== Thunks =====
