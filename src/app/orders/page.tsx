@@ -21,7 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  User,
+  Package,
+  CreditCard,
+  IndianRupee,
+  Calendar,
+  Clock,
+} from "lucide-react";
 
 // Column Type
 export interface Column<RowType> {
@@ -30,28 +37,27 @@ export interface Column<RowType> {
   render?: (row: RowType) => React.ReactNode;
 }
 
+
 export default function OrdersPage() {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
 
   const { data: orders = [], isLoading } = useOrders();
   const updateOrder = useUpdateOrder();
   const deleteOrder = useDeleteOrder();
 
   const statusColors: Record<string, string> = {
-    pending: "bg-amber-100 text-amber-800 border-amber-200",
-    processing: "bg-blue-100 text-blue-800 border-blue-200",
-    shipped: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    delivered: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    cancelled: "bg-red-100 text-red-800 border-red-200",
+    pending: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+    processing: "bg-blue-100 text-blue-800 border border-blue-300",
+    shipped: "bg-indigo-100 text-indigo-800 border border-indigo-300",
+    delivered: "bg-green-100 text-green-800 border border-green-300",
+    cancelled: "bg-red-100 text-red-800 border border-red-300",
   };
 
   // Filter orders
   const filteredOrders = orders.filter((o) =>
-    o.status.toLowerCase().includes(filterText.toLowerCase()) ||
-    o.userId?.toLowerCase().includes(filterText.toLowerCase()) ||
-    o.paymentMethod?.toLowerCase().includes(filterText.toLowerCase())
+    o.status.toLowerCase().includes(filterText.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredOrders.length / pageSize);
@@ -61,34 +67,31 @@ export default function OrdersPage() {
   );
 
   // Edit order (status update)
- const handleEditOrder = (orderId: string, newStatus: string) => {
-  // Find the complete order object from your orders array
-  const fullOrder = orders.find(order => order._id === orderId);
-  
-  if (fullOrder) {
-    updateOrder.mutate({
-      ...fullOrder, // Spread all existing properties
-      status: newStatus, // Only update the status
-    });
-  }
-};
+  const handleEditOrder = (orderId: string, newStatus: string) => {
+    const fullOrder = orders.find((order) => order._id === orderId);
+    if (fullOrder) {
+      updateOrder.mutate({
+        ...fullOrder,
+        status: newStatus,
+      });
+    }
+  };
 
   // Delete order
   const handleDeleteOrder = (order: IOrderPayload) => {
-    if (confirm(`Are you sure you want to delete order ${order._id}?`)) {
-      deleteOrder.mutate(order._id);
-    }
+    deleteOrder.mutate(order._id);
   };
 
   // Table columns
   const columns: Column<IOrderPayload>[] = [
     {
       key: "userId",
-      label: "Customer",
+      label: "User",
       render: (row) => (
-        <div>
-          <div className="font-medium text-gray-900">{row.userId?.name || "N/A"}</div>
-          <div className="text-xs text-gray-500">ID: {row.userId?._id?.slice(-6)}</div>
+        <div className="flex items-center gap-2">
+          <User className="w-4 h-4 text-gray-500" />
+          <span>{row.userId?.name}</span>
+          <span className="text-xs text-gray-400">({row.userId?._id})</span>
         </div>
       ),
     },
@@ -96,46 +99,46 @@ export default function OrdersPage() {
       key: "products",
       label: "Products",
       render: (row) => (
-        <div className="space-y-1">
-          {row.products.slice(0, 2).map((p, index) => (
-            <div key={index} className="text-sm">
-              <span className="font-medium">• {p.product || `Product ${p.product.slice(-6)}`}</span>
-              <span className="text-gray-600 ml-2">(Qty: {p.quantity})</span>
-            </div>
+        <ul className="list-disc pl-5 space-y-1">
+          {row.products.map((p, index) => (
+            <li key={index} className="text-sm text-gray-700">
+              <Package className="inline w-4 h-4 mr-1 text-gray-500" />
+              {p.product.name}{" "}
+              <span className="text-gray-500">
+                (Qty: {p.quantity}, ₹{p.price})
+              </span>
+            </li>
           ))}
-          {row.products.length > 2 && (
-            <div className="text-xs text-gray-500">
-              +{row.products.length - 2} more items
-            </div>
-          )}
-        </div>
+        </ul>
       ),
     },
     {
       key: "shippingAddress",
       label: "Shipping Address",
       render: (row) => (
-        <div className="text-sm">
-          <div className="font-medium">{row.shippingAddress.city}</div>
-          <div className="text-gray-600">{row.shippingAddress.country}</div>
-        </div>
+        <span className="text-sm text-gray-700">
+          {row.shippingAddress.address}, {row.shippingAddress.city},{" "}
+          {row.shippingAddress.postalCode}, {row.shippingAddress.country}
+        </span>
       ),
     },
-    { 
-      key: "paymentMethod", 
+    {
+      key: "paymentMethod",
       label: "Payment",
       render: (row) => (
-        <Badge variant="outline" className="capitalize">
-          {row.paymentMethod}
-        </Badge>
-      )
+        <div className="flex items-center gap-1">
+          <CreditCard className="w-4 h-4 text-gray-500" />
+          <span>{row.paymentMethod}</span>
+        </div>
+      ),
     },
     {
       key: "totalPrice",
       label: "Total",
       render: (row) => (
-        <div className="font-semibold text-gray-900">
-          ₹{row.totalPrice.toLocaleString()}
+        <div className="flex items-center gap-1 font-medium">
+          <IndianRupee className="w-4 h-4 text-gray-500" />
+          ₹{row.totalPrice}
         </div>
       ),
     },
@@ -147,12 +150,9 @@ export default function OrdersPage() {
           value={row.status}
           onValueChange={(value) => handleEditOrder(row._id, value)}
         >
-          <SelectTrigger className="w-36 border-0 bg-transparent">
+          <SelectTrigger className="w-36">
             <SelectValue>
-              <Badge 
-                variant="outline" 
-                className={`${statusColors[row.status]} capitalize font-medium px-3 py-1`}
-              >
+              <Badge className={`${statusColors[row.status]} capitalize`}>
                 {row.status}
               </Badge>
             </SelectValue>
@@ -160,10 +160,7 @@ export default function OrdersPage() {
           <SelectContent>
             {Object.keys(statusColors).map((status) => (
               <SelectItem key={status} value={status}>
-                <Badge 
-                  variant="outline" 
-                  className={`${statusColors[status]} capitalize w-full justify-center`}
-                >
+                <Badge className={`${statusColors[status]} capitalize`}>
                   {status}
                 </Badge>
               </SelectItem>
@@ -174,94 +171,76 @@ export default function OrdersPage() {
     },
     {
       key: "createdAt",
-      label: "Order Date",
+      label: "Created",
       render: (row) => (
-        <div className="text-sm">
-          <div className="text-gray-900">
-            {new Date(row.createdAt).toLocaleDateString("en-IN")}
-          </div>
-          <div className="text-xs text-gray-500">
-            {new Date(row.createdAt).toLocaleTimeString("en-IN", {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </div>
+        <div className="flex items-center gap-1 text-sm text-gray-600">
+          <Calendar className="w-4 h-4 text-gray-500" />
+          {new Date(row.createdAt).toLocaleString("en-IN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })}
         </div>
       ),
     },
+    {
+      key: "updatedAt",
+      label: "Updated",
+      render: (row) => (
+        <div className="flex items-center gap-1 text-sm text-gray-600">
+          <Clock className="w-4 h-4 text-gray-500" />
+          {new Date(row.updatedAt).toLocaleString("en-IN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })}
+        </div>
+      ),
+    },
+   
   ];
 
   return (
     <AppProtectedRoute>
       <AppContainer>
-        <div className="p-6 space-y-6">
+        <div className="p-3 grid gap-6">
           {/* Header Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-              <p className="text-gray-600 mt-1">
-                Manage your customer orders efficiently
-              </p>
-            </div>
-            <AppHeaderActions
-              title=""
-              filterText={filterText}
-              setFilterText={setFilterText}
-              onAddClick={() => {}}
-              placeholder="Search orders..."
-            />
+          <AppHeaderActions
+            title="Orders"
+            filterText={filterText}
+            setFilterText={setFilterText}
+            onAddClick={() => {}}
+          />
+
+          {/* Table */}
+          <div
+            className={`border rounded-md shadow-sm transition-all duration-300 overflow-x-auto sm:overflow-x-hidden ${
+              pageSize > 5 ? "max-h-[400px] overflow-y-auto" : "max-h-none"
+            }`}
+          >
+            {isLoading ? (
+              <TableSkeleton rows={pageSize} />
+            ) : (
+              <GlobalTable<IOrderPayload>
+                columns={columns}
+                data={paginatedOrders}
+                onEdit={(row) => handleEditOrder(row._id, row.status)}
+                onDelete={handleDeleteOrder}
+              />
+            )}
           </div>
 
-          {/* Table Card */}
-          <Card className="border shadow-sm">
-            <CardContent className="p-0">
-              {/* Table */}
-              <div className="overflow-x-auto">
-                {isLoading ? (
-                  <TableSkeleton rows={pageSize} />
-                ) : (
-                  <GlobalTable<IOrderPayload>
-                    columns={columns}
-                    data={paginatedOrders}
-                    onEdit={(row) => handleEditOrder(row._id, row.status)}
-                    onDelete={handleDeleteOrder}
-                  />
-                )}
-              </div>
-
-              {/* Empty State */}
-              {!isLoading && filteredOrders.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 text-4xl mb-3">📦</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
-                  <p className="text-gray-600">
-                    {filterText ? "No orders match your search." : "No orders available."}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Bottom Controls */}
-          {filteredOrders.length > 0 && (
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="text-sm text-gray-600">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredOrders.length)} of {filteredOrders.length} orders
-              </div>
-              <div className="flex items-center gap-4">
-                <PageSizeSelector
-                  pageSize={pageSize}
-                  setPageSize={setPageSize}
-                  setCurrentPage={setCurrentPage}
-                />
-                <ShadCNPagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            </div>
-          )}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 px-2 gap-2 sm:gap-0">
+            <PageSizeSelector
+              pageSize={pageSize}
+              setPageSize={setPageSize}
+              setCurrentPage={setCurrentPage}
+            />
+            <ShadCNPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </div>
       </AppContainer>
     </AppProtectedRoute>

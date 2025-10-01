@@ -1,8 +1,13 @@
 export interface IOrderPayload {
   _id: string;
-  userId: string;
+    userId: {
+    _id: string;
+    name: string;
+  };
   products: {
-    product: string;
+     product: {
+      name: string;
+    };
     quantity: number;
     price: number;
   }[];
