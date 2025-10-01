@@ -8,10 +8,12 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { useDashboard } from "@/hooks/Dashboard/useDashboard";
+import AppProtectedRoute from "@/AppComponents/AppProtectedRoute";
 
 export default function Page() {
   const { data: dashBoard } = useDashboard()
   return (
+    <AppProtectedRoute>
     <SidebarProvider
       style={
         {
@@ -43,5 +45,6 @@ export default function Page() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </AppProtectedRoute>
   );
 }
