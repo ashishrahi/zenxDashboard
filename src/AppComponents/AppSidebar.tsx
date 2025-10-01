@@ -15,9 +15,9 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
     const router = useRouter();
 
-  const handleNavigate = () => {
-    router.push("/dashboard"); // navigates to /dashboard
-  };
+  // const handleNavigate = () => {
+  //   router.push("/dashboard"); // navigates to /dashboard
+  // };
   return (
     <>
       {/* Overlay for mobile */}
@@ -42,7 +42,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
           {!isCollapsed && (
             <h1
       className="font-bold text-xl text-red-600 tracking-wide cursor-pointer"
-      onClick={handleNavigate}
+      // onClick={handleNavigate}
     >
       Genric
     </h1>

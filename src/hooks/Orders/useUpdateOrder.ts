@@ -6,9 +6,9 @@ import { IOrderPayload } from "@/types/IOrderPayload";
 export const useUpdateOrder = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<IOrderPayload, Error, IOrderPayload>({
-    mutationFn: (updatedOrder: IOrderPayload) =>
-      OrderService.update(updatedOrder), // Pass only the object
+  return useMutation<IOrderPayload, Error, Partial<IOrderPayload> & { _id: string }>({
+    mutationFn: (updatedOrder: Partial<IOrderPayload> & { _id: string }) =>
+      OrderService.update(updatedOrder._id, updatedOrder), // Pass ID and partial data
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },

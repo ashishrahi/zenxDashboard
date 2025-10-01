@@ -70,7 +70,7 @@ export function GlobalTable<RowType extends { _id: string }>({
               {columns.map((col) => (
                 <TableCell
                   key={String(col.key)}
-                  className="text-foreground dark:text-gray-100 truncate max-w-[150px]"
+                  className="text-foreground dark:text-gray-200 truncate max-w-[150px]"
                 >
                   {col.render ? col.render(row) : String(row?.[col.key] ?? "")}
                 </TableCell>
